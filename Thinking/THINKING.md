@@ -52,7 +52,7 @@ Cependant, cette approche n'est finalement **pas retenue pour la première versi
 
 Pour la première version, le projet utilisera directement les données du service **JPL Horizons**.
 
-Horizons permet notamment d'obtenir des vecteurs cartésiens de position et de vitesse pour les objets du Système solaire. JPL utilise lui-même des épémérides numériquement intégrées plutôt que de simples orbites képlériennes pour ses épémérides de haute précision. ([JPL Système Solaire Dynamics](https://ssd.jpl.nasa.gov/horizons/manual.html?utm_source=chatgpt.com))
+Horizons permet notamment d'obtenir des vecteurs cartésiens de position et de vitesse pour les objets du Système solaire. JPL utilise lui-même des éphémérides numériquement intégrées plutôt que de simples orbites képlériennes pour ses éphémérides de haute précision.
 
 La première version du projet se concentrera donc sur le Système solaire principal :
 
@@ -99,13 +99,13 @@ Ils ne font simplement **pas partie du pipeline actuel**.
 
 Le projet travaillera dans un **référentiel cartésien barycentrique du Système solaire**.
 
-Le barycentre correspond au centre de masse du système considéré. Le Soleil n'est donc pas nécessairement immobile dans ce référentiel : il se déplace lui-même sous l'effet gravitationnel des autres corps massifs. ([JPL Système Solaire Dynamics](https://ssd.jpl.nasa.gov/glossary/barycenter.html?utm_source=chatgpt.com))
+Le barycentre correspond au centre de masse du système considéré. Le Soleil n'est donc pas nécessairement immobile dans ce référentiel : il se déplace lui-même sous l'effet gravitationnel des autres corps massifs.
 
 C'est un point important : le Soleil ne doit pas être considéré comme un point fixe arbitrairement placé en `(0, 0, 0)` si l'on souhaite conserver une dynamique cohérente.
 
 Les positions et vitesses initiales devront donc utiliser un **même centre de référence et une même epoch**.
 
-Le repère spatial devra rester cohérent avec celui utilisé pour les données astronomiques de départ. JPL utilise notamment l'ICRF pour son système de coordonnées et le TDB comme échelle de temps pour ses épémérides barycentriques. ([JPL Système Solaire Dynamics](https://ssd.jpl.nasa.gov/orbits_doc.html?utm_source=chatgpt.com))
+Le repère spatial devra rester cohérent avec celui utilisé pour les données astronomiques de départ. JPL utilise notamment l'ICRF pour son système de coordonnées et le TDB comme échelle de temps pour ses éphémérides barycentriques.
 
 ---
 
@@ -815,6 +815,8 @@ et d'évaluer objectivement l'impact du timestep et de l'intégrateur.
 
 Le but n'est pas nécessairement d'obtenir une correspondance parfaite avec Horizons, mais de comprendre l'erreur introduite par notre modèle numérique et de vérifier qu'elle reste dans les limites fixées par le projet.
 
+---
+
 # 13. Périmètre initial
 
 La première version ne cherchera pas à reproduire l'intégralité du catalogue du Système solaire.
@@ -847,5 +849,114 @@ Les objets seront sélectionnés en fonction de leur intérêt et de leur impact
 
 L'ajout d'un objet ne devra pas nécessiter de modifier le moteur N-body.
 
-
 Le moteur ne sera considéré comme suffisamment fiable pour accueillir un grand nombre d'astéroïdes qu'après validation de sa stabilité et de sa précision sur le Système solaire de base.
+
+---
+
+# 14. Communication moteur physique → rendu
+
+Une fois qu'un pas de calcul est terminé côté moteur physique, il faut prévenir le front (Qt/QML) qu'une nouvelle position est disponible, plutôt que de le laisser interroger le back en continu.
+
+Le thread physique, une fois le pas terminé, envoie donc un signal (« ping ») au thread Qt pour lui indiquer qu'un nouvel état est prêt à être consommé. Le front va alors chercher les nouvelles données et les afficher.
+
+Cette notification ne doit pas bloquer le thread physique : le calcul du pas suivant doit pouvoir démarrer immédiatement, sans attendre que le front ait fini de lire les données.
+
+---
+
+# 15. Cadencement des calculs avec `std::chrono`
+
+Pour piloter le rythme des calculs côté back, on utilise `std::chrono` : un chrono déclenche les calculs une fois par seconde réelle, et à chaque déclenchement, le moteur doit effectuer tous les pas nécessaires pour couvrir la portion de temps simulé correspondant à `timeScale`.
+
+Le nombre de pas à effectuer par seconde réelle est donné par :
+
+```text
+nombre de pas = timeScale / Δt
+```
+
+Exemple :
+
+```text
+timeScale = 1h/s (= 3600 s/s)
+Δt = 2 s
+nombre de pas = 3600 / 2 = 1800 pas de calcul par seconde réelle
+```
+
+---
+
+# 16. Précalcul des positions — piste explorée et écartée
+
+Une idée envisagée : précalculer, au lancement du logiciel, les positions de tous les objets sur une fenêtre de simulation donnée (par exemple 1 mois avant et après t=0), stocker ces snapshots dans un tableau, puis afficher la position correspondant à l'index ciblé par le temps donné par `std::chrono`, et recalculer une nouvelle tranche lorsque l'on atteint le bout du tableau.
+
+**Problème de stockage.** Le coût explose très vite selon le pas choisi, pour 200k objets sur 1 mois :
+
+| Δt | Snapshots / mois | Stockage (position 3×double, 200k objets) |
+|---|---|---|
+| 5 s | 518 400 | ~2,49 TB |
+| 30 s | 86 400 | ~415 GB |
+| 60 s | 43 200 | ~207 GB |
+| 5 min | 8 640 | ~41,5 GB |
+| 15 min | 2 880 | ~13,8 GB |
+| 1 h | 720 | ~3,46 GB |
+
+**Problème de précision.** Au-delà du stockage, lorsque deux astres se rapprochent, un `Δt` plus petit devient nécessaire localement pour éviter les erreurs de calcul — ce qui est incompatible avec un tableau de snapshots pré-calculés à `Δt` fixe.
+
+**Conclusion : piste non retenue.** Retour à un calcul entièrement en temps réel (voir sections 17 et 18).
+
+---
+
+# 17. Partage des données back/front — buffers
+
+Le partage de données entre le thread physique (back) et le thread Qt (front) doit se faire de manière sécurisée et sans copie inutile. Architecture retenue : 4 buffers.
+
+```text
+Thread physique                          Thread Qt
+      │
+      ▼
+ writeBuffer
+      │  (pas de calcul terminé)
+      ▼
+ échange atomique avec readyBuffer
+      │
+      └────────────────────────────►  readyBuffer récupéré dans
+                                       targetBuffer, quand nécessaire
+
+                                       ancien targetBuffer conservé
+                                       dans prevBuffer
+
+                                       interpolation entre prevBuffer
+                                       et targetBuffer pour un rendu
+                                       fluide
+```
+
+- Le thread physique écrit dans `writeBuffer`, puis échange atomiquement ce buffer avec `readyBuffer` dès qu'un pas est calculé — aucune copie, uniquement un échange de pointeurs.
+- Le thread Qt récupère `readyBuffer` dans `targetBuffer` quand il en a besoin, garde l'ancien `targetBuffer` dans `prevBuffer`, et interpole entre les deux pour obtenir un rendu fluide, même si le rendu tourne à une fréquence différente de celle des calculs physiques.
+
+---
+
+# 18. Horloges et interpolation temporelle
+
+Deux chronos distincts sont nécessaires de part et d'autre.
+
+**Côté back :**
+
+- Un chrono qui déclenche les calculs une fois par seconde réelle (voir section 15).
+- `simTime` : le temps simulé, décorrélé de tout chrono système. C'est un simple timestamp auquel on ajoute `Δt` à chaque pas de calcul (donc mis à jour à chaque fois que les calculs sont lancés, en gros toutes les secondes).
+
+**Côté front :**
+
+- Un chrono qui mesure `elapsed`, le temps réel écoulé depuis le lancement.
+- `targetSimTime`, le temps qui devrait s'être écoulé dans la simulation à l'instant présent :
+
+```text
+targetSimTime = elapsed * timeScale
+```
+
+**Interpolation.**
+
+La position affichée d'un objet à un instant donné est obtenue par interpolation entre `prevBuffer` et `targetBuffer`, à l'aide d'un facteur `alpha` strictement compris entre 0 et 1 :
+
+```text
+alpha = (targetSimTime - prev->simTime) / (target->simTime - prev->simTime)
+```
+
+`alpha` permet donc de savoir où se situer entre les deux derniers états connus du système pour obtenir un rendu fluide, indépendamment de la fréquence réelle des pas de calcul physique.
