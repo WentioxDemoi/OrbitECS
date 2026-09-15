@@ -4,7 +4,12 @@ project(OrbitECS VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Quick)
+set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.9.3/macos/")
+find_package(Qt6 REQUIRED COMPONENTS
+    Core Qml Network Test Sql
+    Multimedia MultimediaWidgets
+    Quick QuickControls2
+)
 
 qt_standard_project_setup(REQUIRES 6.8)
 
