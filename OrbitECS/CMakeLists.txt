@@ -11,6 +11,8 @@ find_package(Qt6 REQUIRED COMPONENTS
     Quick QuickControls2
 )
 
+
+
 qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_executable(appOrbitECS
@@ -29,6 +31,10 @@ set_target_properties(appOrbitECS PROPERTIES
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
+)
+
+target_include_directories(appOrbitECS PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ECS
 )
 
 target_link_libraries(appOrbitECS

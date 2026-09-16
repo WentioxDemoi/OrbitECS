@@ -1,27 +1,26 @@
+#include "Components/StateSnapshot.h"
+#include <array>
+#include <mutex>
+
 class BufferExchange {
 public:
-    explicit BufferExchange(std::size_t bodyCount);
+    explicit BufferExchange(std::size_t heavyCount, std::size_t lightCount)
+    : storage_{StateSnapshot(heavyCount, lightCount), StateSnapshot(heavyCount, lightCount),
+                StateSnapshot(heavyCount, lightCount), StateSnapshot(heavyCount, lightCount)}
+    {}
 
-    // Thread physique : buffer à remplir pour le pas en cours.
-    StateSnapshot& writeSlot() noexcept { return *write_; }
+    StateSnapshot& writeSlot() noexcept { return storage_[Write]; }
 
-    // Thread physique : appelé une fois le pas terminé.
     void publish();
-
-    // Thread rendu : tente de récupérer un nouvel état publié.
-    // Retourne false si rien de neuf depuis le dernier appel.
     bool tryAdvance();
 
-    // Thread rendu uniquement, après un tryAdvance() réussi.
-    const StateSnapshot& prev()   const noexcept { return *prev_; }
-    const StateSnapshot& target() const noexcept { return *target_; }
+    const StateSnapshot& prev()   const noexcept { return storage_[Prev]; }
+    const StateSnapshot& target() const noexcept { return storage_[Target]; }
 
 private:
+    enum Slot : std::size_t { Write = 0, Ready = 1, Target = 2, Prev = 3 };
+
     std::array<StateSnapshot, 4> storage_;
-    StateSnapshot* write_;   // possédé exclusivement par le thread physique
-    StateSnapshot* prev_;    // possédé exclusivement par le thread rendu
-    StateSnapshot* target_;  // possédé exclusivement par le thread rendu
-    StateSnapshot* ready_ = nullptr; // slot partagé, protégé par mutex_
     bool hasNewData_ = false;
     std::mutex mutex_;
 };
