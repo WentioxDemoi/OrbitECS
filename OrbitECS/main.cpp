@@ -7,8 +7,7 @@
 #include "FrontManager.h"
 #include "BackManager.h"
 
-// Ici il faudrait que j'instancie front et back dans des uniqueptr puis que je fasse des connects entre
-// eux afin qu'ils puissent communiquer
+// Ici il faudrait que j'instancie front et back dans des uniqueptr
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
@@ -16,8 +15,6 @@ int main(int argc, char *argv[])
     LoadedBodies loaded = BodyLoader::load("data/bodies.xlsx");
 
     auto exchange = std::make_unique<BufferExchange>(loaded.heavy.dynamic_, loaded.light.dynamic_);
-    
-    
     auto front    = std::make_unique<FrontManager>(exchange.get(), std::move(loaded.meta));
     auto back     = std::make_unique<BackManager>(std::move(loaded.heavy), std::move(loaded.light), exchange.get());
     
