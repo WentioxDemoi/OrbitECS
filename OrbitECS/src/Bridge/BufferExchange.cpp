@@ -3,6 +3,7 @@
 // BufferExchange.cpp
 void BufferExchange::publish() {
     std::scoped_lock lock(mutex_);
+    lastIdx_ = idx_[Write];
     std::swap(idx_[Write], idx_[Ready]);
     hasNewData_ = true;
 }
