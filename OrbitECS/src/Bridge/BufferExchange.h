@@ -1,12 +1,15 @@
+#ifndef BUFFEREXCHANGE_H
+#define BUFFEREXCHANGE_H
+
 #include "Components/StateSnapshot.h"
 #include <array>
 #include <mutex>
 
 class BufferExchange {
 public:
-    explicit BufferExchange(std::size_t heavyCount, std::size_t lightCount)
-    : storage_{StateSnapshot(heavyCount, lightCount), StateSnapshot(heavyCount, lightCount),
-                StateSnapshot(heavyCount, lightCount), StateSnapshot(heavyCount, lightCount)}
+    explicit BufferExchange(Dynamic &heavy, Dynamic &light)
+    : storage_{StateSnapshot(heavy, light), StateSnapshot(heavy, light),
+                StateSnapshot(heavy, light), StateSnapshot(heavy, light)}
     {}
 
     StateSnapshot& writeSlot() noexcept { return storage_[Write]; }
@@ -24,3 +27,5 @@ private:
     bool hasNewData_ = false;
     std::mutex mutex_;
 };
+
+#endif

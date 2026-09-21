@@ -17,6 +17,9 @@ qt_standard_project_setup(REQUIRES 6.8)
 
 qt_add_executable(appOrbitECS
     main.cpp
+    src/Loader/BodyLoader.cpp
+    src/Front/FrontManager.cpp
+    src/Back/BackManager.cpp
 )
 
 qt_add_qml_module(appOrbitECS
@@ -34,7 +37,11 @@ set_target_properties(appOrbitECS PROPERTIES
 )
 
 target_include_directories(appOrbitECS PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/ECS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Back/ECS
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Loader
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Back
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Bridge
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/Front
 )
 
 target_link_libraries(appOrbitECS
