@@ -33,6 +33,15 @@ QML (interface)
 
 🚧 En développement — projet personnel d'apprentissage de l'architecture ECS.
 
+
+## Problème rencontré
+
+Sur macOS, les performances du thread de simulation diminuaient après ~30–60 secondes lorsque la fenêtre n’était plus au premier plan.
+
+Le problème apparaissait avec QGuiApplication + boucle événementielle, mais pas avec QCoreApplication. Il s’agissait vraisemblablement de la gestion énergétique/throttling des applications fenêtrées en arrière-plan (App Nap / Power Management).
+
+Ce comportement a été identifié comme une limitation de l’environnement macOS, et non comme un problème majeur dans le moteur de simulation.
+
 ## Licence
 
 À définir.

@@ -17,6 +17,7 @@ public:
                 double dt, double simSpeedFactor);
 
     void run();
+    void processBatch(int stepsPerBatch);
     void stop();
 
 private:
