@@ -24,6 +24,9 @@ qt_standard_project_setup(REQUIRES 6.8)
 qt_add_executable(appOrbitECS
     main.cpp
 
+    # Debug
+    DebugPrint.cpp
+
     # Loader
     src/Loader/BodyLoader.cpp
 

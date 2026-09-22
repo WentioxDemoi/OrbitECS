@@ -4,11 +4,8 @@
 #include "LoadedBodies.h"
 #include <string_view>
 
-class BodyLoader {
-public:
-  BodyLoader() = delete;
-
-  static LoadedBodies load(const std::string_view path) {};
+namespace BodyLoader {
+  LoadedBodies load(const std::string_view path);
 };
 
 #endif
