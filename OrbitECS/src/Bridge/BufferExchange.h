@@ -1,7 +1,7 @@
 #ifndef BUFFEREXCHANGE_H
 #define BUFFEREXCHANGE_H
 
-#include "Components/StateSnapshot.h"
+#include "StateSnapshot.h"
 #include <array>
 #include <mutex>
 
@@ -11,12 +11,16 @@ public:
         : storage_{StateSnapshot(heavy, light), StateSnapshot(heavy, light),
                    StateSnapshot(heavy, light), StateSnapshot(heavy, light)} {}
 
+
+    // Côté back
     StateSnapshot& writeSlot() noexcept { return storage_[idx_[Write]]; }
+    // Last published nous sert à chopper les positions calculées lors du pas précédent
+    const StateSnapshot& lastPublished() const noexcept { return storage_[lastIdx_]; }
+
+    // Côté front 
     const StateSnapshot& prev()   const noexcept { return storage_[idx_[Prev]]; }
     const StateSnapshot& target() const noexcept { return storage_[idx_[Target]]; }
 
-    // Last published nous sert à chopper les positions calculées lors du pas précédent
-    const StateSnapshot& lastPublished() const noexcept { return storage_[lastIdx_]; }
 
     void publish();
     bool tryAdvance();

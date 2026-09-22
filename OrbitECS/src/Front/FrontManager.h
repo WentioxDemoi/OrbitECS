@@ -4,5 +4,5 @@
 
 class FrontManager {
     public:
-        explicit FrontManager(BufferExchange *exchange, std::vector<BodyMetaData> metaData);
+        explicit FrontManager(BufferExchange &exchange, std::vector<BodyMetaData> metaData);
 };
