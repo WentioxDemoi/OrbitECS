@@ -11,6 +11,7 @@ struct BodyMetaData {
   std::string name;
   double mass;
   std::string text;
+  double radius;
   // Potentiellement d'autres choses par la suite pour affichage scientifique.
   // Pour l'instant la majorité des infos sera dans le texte.
 };

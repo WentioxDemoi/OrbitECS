@@ -16,7 +16,9 @@ find_package(Qt6 REQUIRED COMPONENTS
     Multimedia
     MultimediaWidgets
     Quick
+    Quick3D
     QuickControls2
+    
 )
 
 qt_standard_project_setup(REQUIRES 6.8)
@@ -42,6 +44,7 @@ qt_add_executable(appOrbitECS
     # ECS Systems
     src/Back/ECS/Systems/GravitySystem.cpp
     src/Back/ECS/Systems/IntegrationSystem.cpp
+    src/Front/BodyInstancing.cpp
 )
 
 qt_add_qml_module(appOrbitECS
@@ -97,6 +100,7 @@ target_link_libraries(appOrbitECS
         Qt6::MultimediaWidgets
         Qt6::Quick
         Qt6::QuickControls2
+        Qt6::Quick3D
 )
 
 include(GNUInstallDirs)

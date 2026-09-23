@@ -50,6 +50,7 @@ LoadedBodies load(std::string_view path) {
                              std::string(path));
   }
 
+
   // Colonne -> index, pour être robuste à un réordonnancement du CSV
   const auto headers = splitCsvLine(headerLine);
   std::unordered_map<std::string, std::size_t> colIndex;
@@ -58,7 +59,7 @@ LoadedBodies load(std::string_view path) {
   }
 
 const std::vector<std::string> required = {
-    "name", "x_km", "y_km", "z_km", "vx_km_s", "vy_km_s", "vz_km_s", "mass_kg", "gm_km3_s2"
+    "name", "x_km", "y_km", "z_km", "vx_km_s", "vy_km_s", "vz_km_s", "mass_kg", "gm_km3_s2", "radius_km\r"
 };
   for (const auto &col : required) {
     if (colIndex.find(col) == colIndex.end()) {
@@ -67,7 +68,7 @@ const std::vector<std::string> required = {
   }
 
   std::vector<std::string> names;
-  std::vector<double> mass, gm, x, y, z, vx, vy, vz;
+  std::vector<double> mass, gm, x, y, z, vx, vy, vz, radius;
 
   std::string line;
   while (std::getline(file, line)) {
@@ -84,6 +85,7 @@ const std::vector<std::string> required = {
     vy.push_back(std::stod(fields[colIndex.at("vy_km_s")]));
     vz.push_back(std::stod(fields[colIndex.at("vz_km_s")]));
     mass.push_back(std::stod(fields[colIndex.at("mass_kg")]));
+    radius.push_back(std::stod(fields[colIndex.at("radius_km\r")]));
   }
 
   const std::size_t count = names.size();
@@ -110,7 +112,7 @@ const std::vector<std::string> required = {
     heavy.dynamic_.y[i] = y[i];
     heavy.dynamic_.z[i] = z[i];
 
-    meta.push_back(BodyMetaData{names[i], mass[i], buildText(names[i], rng)});
+    meta.push_back(BodyMetaData{names[i], mass[i], buildText(names[i], rng), radius[i]});
   }
 
   return LoadedBodies{std::move(heavy), std::move(light), std::move(meta)};

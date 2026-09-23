@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
+#include <QQmlContext>
 #include <QtGui/qguiapplication.h>
 #include <memory>
 #include <thread>
@@ -36,7 +37,7 @@ int main(int argc, char *argv[]) {
       std::make_unique<FrontManager>(*exchange.get(), std::move(loaded.meta));
   auto back = std::make_unique<BackManager>(
       std::move(loaded.heavy), std::move(loaded.light), *exchange,
-      1 /*dt en seconde*/, 3600 /*simSpeedFactor*/);
+      30 /*dt en seconde*/, 720000 /*simSpeedFactor*/);
 
   // // Start le back (thread)
   std::thread backThread([&back] { back->run(); });
@@ -45,11 +46,22 @@ int main(int argc, char *argv[]) {
 
   QQmlApplicationEngine engine;
 
+  // Expose FrontManager au QML avant le chargement de Main.qml, pour que
+  // "frontManager.heavyInstancing" etc. soient résolubles dès la création
+  // de la scène.
+  engine.rootContext()->setContextProperty("frontManager", front.get());
+
   QObject::connect(
       &engine, &QQmlApplicationEngine::objectCreationFailed, &app,
       [] { QCoreApplication::exit(-1); }, Qt::QueuedConnection);
   engine.loadFromModule("OrbitECS", "Main");
-  // Start le front
+
+  // Démarre la boucle de rendu front (tick à ~60 fps) une fois la scène
+  // chargée ; le QTimer ne se déclenchera qu'au premier passage de la boucle
+  // d'événements, donc l'ordre par rapport à app.exec() n'a pas d'importance
+  // tant que c'est avant.
+  front->start();
+
   const int rc = app.exec();
 
   // Stop le back
