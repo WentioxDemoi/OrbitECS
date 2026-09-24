@@ -6,6 +6,7 @@
 namespace {
 constexpr double kPositionScale = 1e-6;
 constexpr double kVisualRadiusScale = 20.0;
+constexpr float kSphereRadius = 1.5f;
 } // namespace
 
 FrontManager::FrontManager(BufferExchange &exchange,
@@ -17,23 +18,28 @@ FrontManager::FrontManager(BufferExchange &exchange,
 
   std::vector<float> heavyScale(heavyCount_);
   std::vector<QVector4D> heavyColor(heavyCount_);
-  for (int i = 0; i < heavyCount_; ++i) {
-    if (i == 0)
-      heavyScale[i] = static_cast<float>(metaData_[i].radius * kPositionScale *
-                                         kVisualRadiusScale / 3);
-    else
-      heavyScale[i] = static_cast<float>(metaData_[i].radius * kPositionScale *
-                                         kVisualRadiusScale * 3);
 
+  for (int i = 0; i < heavyCount_; ++i) {
+    float visualRadius;
+    if (i == 0)
+      visualRadius = 0.6f; // Soleil
+    else
+      visualRadius = 0.05f * std::cbrt(float(metaData_[i].radius) / 6371.0f);
+    visualRadius = std::max(visualRadius, 0.015f);
+
+    heavyScale[i] = visualRadius / kSphereRadius;
     const qreal hue = heavyCount_ > 1 ? double(i) / double(heavyCount_) : 0.0;
     const QColor c = QColor::fromHsvF(hue, 0.55, 1.0);
     heavyColor[i] =
         QVector4D(float(c.redF()), float(c.greenF()), float(c.blueF()), 1.0f);
   }
 
-  const std::vector<float> lightScale(lightCount_, 0.15f);
+  // Astéroïdes : 1/4 de la taille visuelle du Soleil (index 0).
+  // Suppose que les deux Model QML ont la même échelle (voir Main.qml).
+  const float lightVisualScale = heavyCount_ > 0 ? heavyScale[0] / 4.0f : 1.0f;
+  const std::vector<float> lightScale(lightCount_, lightVisualScale);
   const std::vector<QVector4D> lightColor(lightCount_,
-                                          QVector4D(0.6f, 0.6f, 0.65f, 1.0f));
+                                          QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 
   heavyX_.resize(heavyCount_);
   heavyY_.resize(heavyCount_);

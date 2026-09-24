@@ -7,6 +7,18 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_PREFIX_PATH "$ENV{HOME}/Qt/6.9.3/macos/")
 
+# Release par défaut si rien n'est précisé
+if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+endif()
+
+option(ORBIT_NATIVE_ARCH "Optimiser pour le CPU de la machine (non portable)" ON)
+option(ORBIT_FAST_MATH   "Activer -ffast-math (plus rapide, moins précis)"    ON)
+option(ORBIT_LTO         "Activer la LTO en Release"                          ON)
+
+include(CheckCXXCompilerFlag)
+include(CheckIPOSupported)
+
 find_package(Qt6 REQUIRED COMPONENTS
     Core
     Qml
@@ -46,6 +58,36 @@ qt_add_executable(appOrbitECS
     src/Back/ECS/Systems/IntegrationSystem.cpp
     src/Front/BodyInstancing.cpp
 )
+
+# --- Optimisations du back (Release uniquement) ---
+target_compile_options(appOrbitECS PRIVATE
+    $<$<CONFIG:Release>:-O3>
+    # Sans danger pour la physique : pas de errno ni de traps sur les maths
+    $<$<CONFIG:Release>:-fno-math-errno>
+    $<$<CONFIG:Release>:-fno-trapping-math>
+)
+
+if(ORBIT_NATIVE_ARCH)
+    check_cxx_compiler_flag(-march=native HAS_MARCH_NATIVE)
+    check_cxx_compiler_flag(-mcpu=native  HAS_MCPU_NATIVE)
+    if(HAS_MARCH_NATIVE)
+        target_compile_options(appOrbitECS PRIVATE $<$<CONFIG:Release>:-march=native>)
+    elseif(HAS_MCPU_NATIVE)   # Apple Silicon avec certains Apple clang
+        target_compile_options(appOrbitECS PRIVATE $<$<CONFIG:Release>:-mcpu=native>)
+    endif()
+endif()
+
+if(ORBIT_FAST_MATH)
+    target_compile_options(appOrbitECS PRIVATE $<$<CONFIG:Release>:-ffast-math>)
+endif()
+
+if(ORBIT_LTO)
+    check_ipo_supported(RESULT HAS_IPO OUTPUT IPO_ERR)
+    if(HAS_IPO)
+        set_property(TARGET appOrbitECS PROPERTY
+            INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+    endif()
+endif()
 
 qt_add_qml_module(appOrbitECS
     URI OrbitECS
