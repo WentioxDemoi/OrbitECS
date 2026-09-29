@@ -4,17 +4,20 @@
 #include "Systems/GravitySystem.h"
 #include "Systems/IntegrationSystem.h"
 
+#include <QtCore/qobject.h>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <thread>
 
 BackManager::BackManager(HeavyBodies heavy, LightBodies light,
-                         BufferExchange &buf, double dt, double simSpeedFactor)
+                         BufferExchange &buf, double dt, double simSpeedFactor, QObject *parent)
     : heavy_(std::move(heavy)), light_(std::move(light)), buf_(buf), dt_(dt),
       simSpeedFactor_(simSpeedFactor), prevHeavyAccel_(heavy_.count_),
       prevLightAccel_(light_.count_),
       local_{StateSnapshot(heavy_.dynamic_, light_.dynamic_),
-             StateSnapshot(heavy_.dynamic_, light_.dynamic_)} {
+             StateSnapshot(heavy_.dynamic_, light_.dynamic_)},
+      QObject(parent) {
   primeAccelerations();
 }
 
@@ -28,11 +31,13 @@ void BackManager::run() {
   const auto period = std::chrono::seconds(1);
   auto nextTick = clock_type::now() + period;
 
-  const int stepsPerBatch = simSpeedFactor_ / dt_;
 
   // int i = 0; // Debug
 
   while (running_) {
+    std::cout << "SimSpeed : " + std::to_string(simSpeedFactor_) + "   dt : " + std::to_string(dt_) << std::endl;
+    const int stepsPerBatch = simSpeedFactor_ / dt_;
+
     const auto batchStart = clock_type::now();
     // Amorce le batch depuis le dernier état publié
     local_[0] = buf_.lastPublished();
@@ -78,6 +83,7 @@ void BackManager::run() {
         std::cerr << "[BackManager] Batch trop lent : dépassement de "
                   << overrunMs << " ms, " << (missedTicks - 1)
                   << " tick(s) sauté(s)\n";
+        emit simulationOverrun(dt_ + 1);
       }
       nextTick += period * missedTicks;
     }

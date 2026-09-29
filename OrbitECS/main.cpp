@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QtCore/qobject.h>
 #include <QtGui/qguiapplication.h>
 #include <memory>
 #include <thread>
@@ -15,27 +16,30 @@
 #include "DebugPrint.h"
 #include <filesystem>
 
-// Ici il faudrait que j'instancie front et back dans des uniqueptr
 int main(int argc, char *argv[]) {
   QGuiApplication app(argc, argv);
 
-  std::cout << "Working directory: "
+//   std::cout << "Working directory: " << std::filesystem::current_path()
+//             << std::endl;
 
-            << std::filesystem::current_path()
-
-            << std::endl;
-
-  LoadedBodies loaded =
-      BodyLoader::load("../../Thinking/solar_system_initial_state.csv", "../../Thinking/asteroids_initial_state.csv", 4000 /*Nb asteroids*/);
+  LoadedBodies loaded = BodyLoader::load(
+      "../../Thinking/solar_system_initial_state.csv",
+      "../../Thinking/asteroids_initial_state.csv");
 
   DebugPrint::printLoadedBodies(loaded);
 
   // Attention à l'odre, dans l'instanciation de back, on utilise un move.
   BufferExchange exchange(loaded.heavy.dynamic_, loaded.light.dynamic_);
-  FrontManager front(exchange, std::move(loaded.meta));
-  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange,
-                   1 /*dt en seconde*/, 3600 /*simSpeedFactor*/);
 
+  // Pour front et back, pas besoin de passer un parent QObject car ces instances sont sur la stack.
+  // Si on donne un parent, Qt appellerait delete pour des objets qui n'ont jamais été instanciés sur la heap --> UB
+  FrontManager front(exchange, std::move(loaded.meta), nullptr);
+  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange,
+                   1 /*dt en seconde*/, 1 /*simSpeedFactor*/, nullptr);
+
+    QObject::connect(&front, &FrontManager::simSpeedFactorChanged, &back, &BackManager::onSimSpeedFactorChanged);
+    QObject::connect(&front, &FrontManager::dtChanged, &back, &BackManager::onDtChanged);
+    QObject::connect(&back, &BackManager::simulationOverrun, &front, &FrontManager::setDt);
   // // Start le back (thread)
   std::thread backThread([&back] { back.run(); });
 

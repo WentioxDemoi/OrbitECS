@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick3D
 import QtQuick3D.Helpers
-import QtQuick.Effects
 
 Window {
     id: window
@@ -11,15 +10,6 @@ Window {
     visible: true
     title: "OrbitECS"
     color: "black"
-
-    // --- Suivi d'un astre -----------------------------------------------
-
-    property int frameTick: 0
-    property int followedIndex: -1
-
-    // Distance caméra-astre en mode suivi
-    property real followDistance: 0.5
-    property vector3d followOffset: Qt.vector3d(0, 0, 0.5)
 
     property bool menuOpen: false
     property real menuProgress: menuOpen ? 1.0 : 0.0
@@ -31,191 +21,23 @@ Window {
         }
     }
 
-    // ---------------------------------------------------------------------
-    // Suivi
-    //
-    // originNode est uniquement le pivot de la caméra.
-    // Les Model/instances restent dans la scène et ne sont jamais déplacés.
-    // ---------------------------------------------------------------------
-
-    function follow(i) {
-        if (i < 0 || i >= frontManager.heavyCount)
-            return
-
-        var bodyPosition = frontManager.heavyPosition(i)
-
-        originNode.position = Qt.vector3d(0, 0, 0)
-        originNode.rotation = Qt.quaternion(1, 0, 0, 0)
-
-        followOffset = Qt.vector3d(0, 0, followDistance)
-        camera.position = bodyPosition.plus(followOffset)
-        camera.lookAt(bodyPosition)
-
-        followedIndex = i
-
-        frameTick++
-    }
-
-    // ---------------------------------------------------------------------
-    // Quitter le suivi
-    // ---------------------------------------------------------------------
-
-    function release() {
-        if (followedIndex < 0)
-            return
-
-        // On récupère d'abord la transformation MONDE de la caméra.
-        var worldPosition = camera.scenePosition
-        var worldRotation = camera.sceneRotation
-
-        // Suppression du pivot.
-        originNode.position = Qt.vector3d(0, 0, 0)
-        originNode.rotation = Qt.quaternion(1, 0, 0, 0)
-
-        // La caméra est maintenant directement dans le monde.
-        camera.position = worldPosition
-        camera.rotation = worldRotation
-
-        followedIndex = -1
-
-        frameTick++
-    }
-
-    // ---------------------------------------------------------------------
-    // Mise à jour du pivot lorsque l'astre se déplace
-    // ---------------------------------------------------------------------
-
-    FrameAnimation {
-        running: true
-
-        onTriggered: {
-            if (window.followedIndex >= 0) {
-                camera.position = frontManager.heavyPosition(
-                    window.followedIndex
-                ).plus(window.followOffset)
-            }
-
-            window.frameTick++
-        }
-    }
-
     Shortcut {
         sequence: "Escape"
-        onActivated: window.release()
+        onActivated: rig.release()
     }
 
-    // --- Composant Liquid Glass ------------------------------------------
-
-    component GlassBackground: Item {
-        id: gb
-
-        property Item backdrop
-        property real cornerRadius: 20
-
-        default property alias content: contentItem.data
-
-        ShaderEffectSource {
-            id: src
-
-            anchors.fill: parent
-            sourceItem: gb.backdrop
-
-            sourceRect: Qt.rect(
-                gb.x,
-                gb.y,
-                gb.width,
-                gb.height
-            )
-
-            visible: false
-        }
-
-        Item {
-            id: maskItem
-
-            anchors.fill: parent
-            visible: false
-            layer.enabled: true
-
-            Rectangle {
-                anchors.fill: parent
-                radius: gb.cornerRadius
-            }
-        }
-
-        MultiEffect {
-            anchors.fill: parent
-            source: src
-
-            blurEnabled: true
-            blur: 1.0
-            blurMax: 48
-
-            saturation: 0.4
-            brightness: 0.08
-
-            maskEnabled: true
-            maskSource: maskItem
-        }
-
-        Rectangle {
-            anchors.fill: parent
-            radius: gb.cornerRadius
-
-            gradient: Gradient {
-                GradientStop {
-                    position: 0.0
-                    color: "#40ffffff"
-                }
-
-                GradientStop {
-                    position: 0.5
-                    color: "#0dffffff"
-                }
-
-                GradientStop {
-                    position: 1.0
-                    color: "#22ffffff"
-                }
-            }
-
-            border.width: 1
-            border.color: "#66ffffff"
-        }
-
-        Item {
-            id: contentItem
-            anchors.fill: parent
-        }
-    }
-
-    // --- Scène 3D --------------------------------------------------------
-
-    Node {
-        id: originNode
-
-        position: Qt.vector3d(0, 0, 0)
-        rotation: Qt.quaternion(1, 0, 0, 0)
-
-        PerspectiveCamera {
-            id: camera
-
-            position: Qt.vector3d(
-                0,
-                400,
-                1600
-            )
-
-            clipNear: 0.05
-            clipFar: 2.0e4
-        }
+    // Pivot caméra + logique de suivi d'astre.
+    // Sibling du View3D : ce n'est pas un nœud visible, seul son
+    // impact sur la transformation de "camera" compte.
+    CameraRig {
+        id: rig
     }
 
     View3D {
         id: sceneView
 
         anchors.fill: parent
-        camera: camera
+        camera: rig.camera
 
         environment: SceneEnvironment {
             backgroundMode: SceneEnvironment.Color
@@ -276,55 +98,17 @@ Window {
         }
     }
 
-    // --- Labels ----------------------------------------------------------
-
-    Repeater {
-        model: frontManager.heavyCount
-
-        delegate: Text {
-            id: bodyName
-
-            property vector3d viewportPosition: {
-                window.frameTick
-
-                return camera.mapToViewport(
-                    frontManager.heavyPosition(index)
-                )
-            }
-
-            x: viewportPosition.x * sceneView.width - width / 2
-
-            y: viewportPosition.y * sceneView.height - height - 8
-
-            text: frontManager.heavyName(index)
-
-            color: index === window.followedIndex
-                   ? "#ffd54a"
-                   : "white"
-
-            font.pixelSize: 13
-            font.bold: true
-
-            style: Text.Outline
-            styleColor: "black"
-
-            visible:
-                viewportPosition.z >= 0
-                && viewportPosition.x >= 0
-                && viewportPosition.x <= 1
-                && viewportPosition.y >= 0
-                && viewportPosition.y <= 1
-        }
+    BodyLabels {
+        camera: rig.camera
+        sceneView: sceneView
+        followedIndex: rig.followedIndex
+        frameTick: rig.frameTick
     }
 
-    // --- Contrôles caméra ------------------------------------------------
-
     WasdController {
-        id: cameraController
-
         anchors.fill: parent
 
-        controlledObject: camera
+        controlledObject: rig.camera
 
         speed: 1.0
         shiftSpeed: 4.0
@@ -342,11 +126,7 @@ Window {
         ySpeed: 0.2
     }
 
-    // --- Zoom ------------------------------------------------------------
-
     WheelHandler {
-        id: cameraZoom
-
         orientation: Qt.Vertical
         target: null
 
@@ -357,7 +137,7 @@ Window {
         onWheel: function(event) {
             var delta = -event.angleDelta.y * 0.01
 
-            var p = camera.position
+            var p = rig.camera.position
 
             var k = 1.0 + 0.1 * delta
 
@@ -368,31 +148,28 @@ Window {
             if (len < 0.3 || len > 2.0e4)
                 return
 
-            if (window.followedIndex >= 0) {
-                window.followOffset = window.followOffset.times(k)
-                window.followDistance = window.followOffset.length()
-                camera.position = frontManager.heavyPosition(
-                    window.followedIndex
-                ).plus(window.followOffset)
+            if (rig.followedIndex >= 0) {
+                rig.followOffset = rig.followOffset.times(k)
+                rig.followDistance = rig.followOffset.length()
+                rig.camera.position = frontManager.heavyPosition(
+                    rig.followedIndex
+                ).plus(rig.followOffset)
             } else {
-                camera.position = p.times(k)
+                rig.camera.position = p.times(k)
             }
         }
     }
 
-    // --- Menu Liquid Glass ----------------------------------------------
-
-    GlassBackground {
+    SidePanel {
         id: menuPanel
 
         backdrop: sceneView
-        cornerRadius: 24
 
         width: 210
 
         height:
             Math.min(
-                menuList.contentHeight + 16,
+                contentHeight + 16,
                 window.height - 100
             ) * window.menuProgress
 
@@ -402,211 +179,63 @@ Window {
         visible: window.menuProgress > 0.01
         opacity: window.menuProgress
 
-        ListView {
-            id: menuList
+        followedIndex: rig.followedIndex
 
-            anchors.fill: parent
-            anchors.margins: 8
-
-            clip: true
-            spacing: 2
-
-            model: frontManager.heavyCount
-
-            boundsBehavior: Flickable.StopAtBounds
-
-            header: Item {
-                width: menuList.width
-                height: 40
-
-                readonly property bool isFree:
-                    window.followedIndex < 0
-
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-
-                    radius: height / 2
-
-                    gradient: Gradient {
-                        GradientStop {
-                            position: 0.0
-
-                            color:
-                                parent.parent.isFree
-                                ? "#5580d0ff"
-                                : "#33ffffff"
-                        }
-
-                        GradientStop {
-                            position: 1.0
-
-                            color:
-                                parent.parent.isFree
-                                ? "#2280d0ff"
-                                : "#0fffffff"
-                        }
-                    }
-
-                    border.width: 1
-
-                    border.color:
-                        parent.isFree
-                        ? "#aa80d0ff"
-                        : "#55ffffff"
-
-                    Text {
-                        anchors.centerIn: parent
-
-                        text: "Vue libre"
-
-                        color: "white"
-
-                        font.pixelSize: 14
-                        font.italic: true
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-
-                        cursorShape:
-                            Qt.PointingHandCursor
-
-                        onClicked: window.release()
-                    }
-                }
-            }
-
-            delegate: Item {
-                id: entry
-
-                width: menuList.width
-                height: 40
-
-                readonly property bool isFollowed:
-                    index === window.followedIndex
-
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: 3
-
-                    radius: height / 2
-
-                    gradient: Gradient {
-                        GradientStop {
-                            position: 0.0
-
-                            color:
-                                entry.isFollowed
-                                ? "#66ffd54a"
-                                : (
-                                    area.pressed
-                                    ? "#66ffffff"
-                                    : (
-                                        area.containsMouse
-                                        ? "#44ffffff"
-                                        : "#33ffffff"
-                                    )
-                                )
-                        }
-
-                        GradientStop {
-                            position: 1.0
-
-                            color:
-                                entry.isFollowed
-                                ? "#22ffd54a"
-                                : "#0fffffff"
-                        }
-                    }
-
-                    border.width: 1
-
-                    border.color:
-                        entry.isFollowed
-                        ? "#aaffd54a"
-                        : "#55ffffff"
-
-                    Text {
-                        anchors.centerIn: parent
-
-                        text:
-                            frontManager.heavyName(index)
-
-                        color: "white"
-
-                        font.pixelSize: 14
-                        font.bold: entry.isFollowed
-                    }
-
-                    MouseArea {
-                        id: area
-
-                        anchors.fill: parent
-
-                        hoverEnabled: true
-
-                        cursorShape:
-                            Qt.PointingHandCursor
-
-                        onClicked:
-                            window.follow(index)
-                    }
-                }
-            }
-        }
+        onBodySelected: (index) => rig.follow(index)
+        onFreeViewRequested: rig.release()
     }
 
-    // --- Bouton rond -----------------------------------------------------
-
-    GlassBackground {
-        id: toggleButton
-
+    ToggleButton {
         backdrop: sceneView
-
-        width: 52
-        height: 52
-
-        cornerRadius: 26
 
         x: window.width - width - 16
         y: 16
 
-        scale:
-            toggleArea.pressed
-            ? 0.92
-            : 1.0
+        menuOpen: window.menuOpen
 
-        Behavior on scale {
-            NumberAnimation {
-                duration: 90
+        onToggled: window.menuOpen = !window.menuOpen
+    }
+
+    Column {
+        spacing: 12
+
+        width: Math.min(window.width - 64, 640)
+
+        x: (window.width - width) / 2
+        y: window.height - height - 24
+
+        SpeedControl {
+            id: speedControl
+            width: parent.width
+        }
+
+        NumericSlider {
+            width: parent.width
+
+            label: "dt"
+            suffix: " s"
+
+            from: 1
+            to: 3600
+            stepSize: 1
+            value: frontManager.dt
+
+            onValueChanged: {
+                speedControl.ensureAtLeast(value)
             }
         }
 
-        Text {
-            anchors.centerIn: parent
+        NumericSlider {
+            width: parent.width
 
-            text:
-                window.menuOpen
-                ? "✕"
-                : "☰"
+            label: "Astéroïdes"
 
-            color: "white"
+            from: 0
+            to: 100000
+            stepSize: 100
+            value: 1000
 
-            font.pixelSize: 22
-        }
-
-        MouseArea {
-            id: toggleArea
-
-            anchors.fill: parent
-
-            cursorShape:
-                Qt.PointingHandCursor
-
-            onClicked:
-                window.menuOpen =
-                    !window.menuOpen
+            onValueChanged: frontManager.lightInstancing.instanceCountOverride = value
         }
     }
 }

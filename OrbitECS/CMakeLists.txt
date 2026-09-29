@@ -95,6 +95,13 @@ qt_add_qml_module(appOrbitECS
 
     QML_FILES
         Main.qml
+        CameraRig.qml
+        GlassBackground.qml
+        BodyLabels.qml
+        SidePanel.qml
+        ToggleButton.qml
+        SpeedControl.qml
+        NumericSlider.qml
 )
 
 set_target_properties(appOrbitECS PROPERTIES

@@ -11,7 +11,7 @@ constexpr float kSphereRadius = 1.5f;
 
 FrontManager::FrontManager(BufferExchange &exchange,
                            std::vector<BodyMetaData> metaData, QObject *parent)
-    : QObject(parent), exchange_(exchange), metaData_(std::move(metaData)) {
+    : exchange_(exchange), metaData_(std::move(metaData)), QObject(parent) {
   const StateSnapshot &initial = exchange_.target();
   heavyCount_ = int(initial.heavyDynamic.x.size());
   lightCount_ = int(initial.lightDynamic.x.size());

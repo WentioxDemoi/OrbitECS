@@ -159,7 +159,7 @@ HeavyLoad loadHeavy(std::string_view path) {
 
 // --- Light ---------------------------------------------------------------
 
-LightBodies loadLight(std::string_view path, int nb_asteroids) {
+LightBodies loadLight(std::string_view path) {
   auto file = openCsv(path);
 
   // Seuls l'état (position/vitesse) est requis : masse, rayon, H... sont
@@ -172,9 +172,8 @@ LightBodies loadLight(std::string_view path, int nb_asteroids) {
   std::vector<double> x, y, z, vx, vy, vz;
 
   std::string line;
-  int i = 0;
 
-  while (getCsvLine(file, line) && nb_asteroids > i) {
+  while (getCsvLine(file, line)) {
     if (line.empty())
       continue;
     const auto fields = splitCsvLine(line);
@@ -187,7 +186,6 @@ LightBodies loadLight(std::string_view path, int nb_asteroids) {
     vx.push_back(std::stod(fields[col.at("vx_km_s")]));
     vy.push_back(std::stod(fields[col.at("vy_km_s")]));
     vz.push_back(std::stod(fields[col.at("vz_km_s")]));
-    i++;
   }
 
   LightBodies light(x.size()); // ax/ay/az initialisés à 0 par le constructeur
@@ -204,9 +202,9 @@ LightBodies loadLight(std::string_view path, int nb_asteroids) {
 
 namespace BodyLoader {
 
-LoadedBodies load(std::string_view heavyPath, std::string_view lightPath, int nb_asteroids) {
+LoadedBodies load(std::string_view heavyPath, std::string_view lightPath) {
   auto heavy = loadHeavy(heavyPath);
-  auto light = loadLight(lightPath, nb_asteroids);
+  auto light = loadLight(lightPath);
   return LoadedBodies{std::move(heavy.bodies), std::move(light),
                       std::move(heavy.meta)};
 }

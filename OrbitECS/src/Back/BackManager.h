@@ -6,19 +6,27 @@
 #include "LightBodies.h"
 #include "BufferExchange.h"
 #include "AccelBuffer.h"
+#include <QtCore/qobject.h>
 #include <atomic>
 #include <chrono>
 
-class BackManager {
+class BackManager : public QObject {
+      Q_OBJECT
 public:
     // dt : pas Verlet fixe, en secondes simulées (précision de l'intégration)
     // simSpeedFactor : secondes simulées par seconde réelle (vitesse de la simu)
     BackManager(HeavyBodies heavy, LightBodies light, BufferExchange& buf,
-                double dt, double simSpeedFactor);
+                double dt, double simSpeedFactor, QObject *parent);
 
     void run();
     void processBatch(int stepsPerBatch);
     void stop();
+
+    void onSimSpeedFactorChanged(int simSpeedFactor) { simSpeedFactor_ = simSpeedFactor; }
+    void onDtChanged(int dt) { dt_ = dt; }
+
+signals:
+    void simulationOverrun(int newDt);
 
 private:
     using clock_type = std::chrono::steady_clock;

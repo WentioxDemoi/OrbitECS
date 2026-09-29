@@ -5,7 +5,7 @@
 #include <string_view>
 
 namespace BodyLoader {
-  LoadedBodies load(std::string_view heavyPath, std::string_view lightPath, int nb_asteroids);
+  LoadedBodies load(std::string_view heavyPath, std::string_view lightPath);
 };
 
 #endif
