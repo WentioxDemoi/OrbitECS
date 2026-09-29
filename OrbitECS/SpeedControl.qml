@@ -39,6 +39,20 @@ Column {
         ].label
     }
 
+    // Valeur (en secondes) actuellement retenue par le curseur,
+    // recalculée à chaque fois que simSpeedSlider.value change
+    // (donc au relâchement, comme frontManager.simSpeedFactor).
+    readonly property int currentSeconds: sliderValues[Math.round(simSpeedSlider.value)].seconds
+
+    onCurrentSecondsChanged: {
+        // Symétrique de ensureAtLeast() côté dt : si la vitesse choisie
+        // descend sous dt, on baisse dt plutôt que de laisser
+        // simSpeedFactor / dt tomber à 0 par division entière.
+        if (currentSeconds < frontManager.dt) {
+            frontManager.userSetDt(currentSeconds)
+        }
+    }
+
     Slider {
         id: simSpeedSlider
 
@@ -49,7 +63,7 @@ Column {
         from: 0
         to: speedControl.sliderValues.length - 1
         stepSize: 1
-        value: 13 // "+1h/s" (3600) : aligné sur le simSpeedFactor par défaut de BackManager
+        value: 10 // "+1h/s" (3600) : aligné sur le simSpeedFactor par défaut de BackManager
 
         onValueChanged: {
             var index = Math.round(value)

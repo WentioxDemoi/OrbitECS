@@ -26,9 +26,34 @@ Window {
         onActivated: rig.release()
     }
 
-    // Pivot caméra + logique de suivi d'astre.
-    // Sibling du View3D : ce n'est pas un nœud visible, seul son
-    // impact sur la transformation de "camera" compte.
+    Shortcut {
+        sequence: "W"
+        enabled: rig.followedIndex >= 0
+        autoRepeat: true
+        onActivated: rig.adjustFollowDistance(0.9)
+    }
+
+    Shortcut {
+        sequence: "Shift+W"
+        enabled: rig.followedIndex >= 0
+        autoRepeat: true
+        onActivated: rig.adjustFollowDistance(0.8)
+    }
+
+    Shortcut {
+        sequence: "S"
+        enabled: rig.followedIndex >= 0
+        autoRepeat: true
+        onActivated: rig.adjustFollowDistance(1.1)
+    }
+
+    Shortcut {
+        sequence: "Shift+S"
+        enabled: rig.followedIndex >= 0
+        autoRepeat: true
+        onActivated: rig.adjustFollowDistance(1.25)
+    }
+
     CameraRig {
         id: rig
     }
@@ -119,47 +144,12 @@ Window {
         rightSpeed: 1.0
         leftSpeed: 1.0
 
-        upSpeed: 10.0
-        downSpeed: 10.0
+        upSpeed: 1.0
+        downSpeed: 1.0
 
-        xSpeed: 0.2
-        ySpeed: 0.2
+        mouseEnabled: false
     }
-
-    WheelHandler {
-        orientation: Qt.Vertical
-        target: null
-
-        acceptedDevices:
-            PointerDevice.Mouse |
-            PointerDevice.TouchPad
-
-        onWheel: function(event) {
-            var delta = -event.angleDelta.y * 0.01
-
-            var p = rig.camera.position
-
-            var k = 1.0 + 0.1 * delta
-
-            k = Math.max(k, 0.05)
-
-            var len = p.length() * k
-
-            if (len < 0.3 || len > 2.0e4)
-                return
-
-            if (rig.followedIndex >= 0) {
-                rig.followOffset = rig.followOffset.times(k)
-                rig.followDistance = rig.followOffset.length()
-                rig.camera.position = frontManager.heavyPosition(
-                    rig.followedIndex
-                ).plus(rig.followOffset)
-            } else {
-                rig.camera.position = p.times(k)
-            }
-        }
-    }
-
+    
     SidePanel {
         id: menuPanel
 
@@ -221,8 +211,12 @@ Window {
             value: frontManager.dt
 
             onValueChanged: {
-                speedControl.ensureAtLeast(value)
+                frontManager.userSetDt(value)
+                if (frontManager.simSpeedFactor < value) {
+                    speedControl.ensureAtLeast(value)
+                }
             }
+            
         }
 
         NumericSlider {

@@ -26,6 +26,8 @@ class FrontManager : public QObject {
                  NOTIFY simSpeedFactorChanged)
   Q_PROPERTY(int dt READ dt WRITE setDt NOTIFY dtChanged)
 
+  
+
 public:
   explicit FrontManager(BufferExchange &exchange,
                         std::vector<BodyMetaData> metaData, QObject *parent);
@@ -49,6 +51,10 @@ public:
 
   Q_INVOKABLE QVector3D heavyPosition(int index) const;
   Q_INVOKABLE QString heavyName(int index) const;
+
+  Q_INVOKABLE void userSetDt(int dt) {
+    setDt(dt);
+}
 
 public slots:
   void start();
