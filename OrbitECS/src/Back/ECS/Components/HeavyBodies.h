@@ -9,7 +9,7 @@
 
 struct HeavyBodies {
 
-  explicit HeavyBodies(std::size_t count)
+  explicit HeavyBodies(int count)
       : mass(count), gm(count), vx(count), vy(count), vz(count), ax(count),
         ay(count), az(count), name(count), dynamic_(count), count_(count) {}
 

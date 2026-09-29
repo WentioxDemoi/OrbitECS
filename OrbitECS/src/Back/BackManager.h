@@ -9,6 +9,7 @@
 #include <QtCore/qobject.h>
 #include <atomic>
 #include <chrono>
+#include <cstdint>
 
 class BackManager : public QObject {
       Q_OBJECT
@@ -16,10 +17,10 @@ public:
     // dt : pas Verlet fixe, en secondes simulées (précision de l'intégration)
     // simSpeedFactor : secondes simulées par seconde réelle (vitesse de la simu)
     BackManager(HeavyBodies heavy, LightBodies light, BufferExchange& buf,
-                double dt, double simSpeedFactor, QObject *parent);
+                int dt, int simSpeedFactor, QObject *parent);
 
     void run();
-    void processBatch(int stepsPerBatch);
+    void processBatch(int simulationSeconds, int maxStepSeconds);
     void stop();
 
     void onSimSpeedFactorChanged(int simSpeedFactor) { simSpeedFactor_ = simSpeedFactor; }

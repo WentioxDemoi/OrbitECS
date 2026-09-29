@@ -13,8 +13,8 @@ namespace GravitySystem {
 // in doit être last publish
 void computeAccelerations(HeavyBodies &heavy, LightBodies &light,
                           const StateSnapshot &in) {
-  const std::size_t nh = heavy.count_;
-  const std::size_t nl = light.count_;
+  const int nh = heavy.count_;
+  const int nl = light.count_;
 
   std::fill(heavy.ax.begin(), heavy.ax.end(), 0.0);
   std::fill(heavy.ay.begin(), heavy.ay.end(), 0.0);
@@ -26,8 +26,8 @@ void computeAccelerations(HeavyBodies &heavy, LightBodies &light,
 
   // Heavy <-> Heavy
 
-  for (std::size_t i = 0; i < nh; ++i) {
-    for (std::size_t j = i + 1; j < nh; ++j) {
+  for (int i = 0; i < nh; ++i) {
+    for (int j = i + 1; j < nh; ++j) {
 
       const double dx = hx[j] - hx[i];
       const double dy = hy[j] - hy[i];
@@ -57,13 +57,13 @@ void computeAccelerations(HeavyBodies &heavy, LightBodies &light,
   const auto &ly = in.lightDynamic.y;
   const auto &lz = in.lightDynamic.z;
 
-  for (std::size_t k = 0; k < nl; ++k) {
+  for (int k = 0; k < nl; ++k) {
 
     double ax = 0.0;
     double ay = 0.0;
     double az = 0.0;
 
-    for (std::size_t i = 0; i < nh; ++i) {
+    for (int i = 0; i < nh; ++i) {
 
       const double dx = hx[i] - lx[k];
       const double dy = hy[i] - ly[k];

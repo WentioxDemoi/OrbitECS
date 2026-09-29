@@ -34,22 +34,29 @@ Column {
 
     Label {
         anchors.horizontalCenter: parent.horizontalCenter
+
         text: speedControl.sliderValues[
-            Math.round(simSpeedSlider.visualPosition * (speedControl.sliderValues.length - 1))
+            Math.round(
+                simSpeedSlider.visualPosition *
+                (speedControl.sliderValues.length - 1)
+            )
         ].label
     }
 
-    // Valeur (en secondes) actuellement retenue par le curseur,
-    // recalculée à chaque fois que simSpeedSlider.value change
-    // (donc au relâchement, comme frontManager.simSpeedFactor).
-    readonly property int currentSeconds: sliderValues[Math.round(simSpeedSlider.value)].seconds
+    // Vitesse de simulation signée.
+    readonly property int currentSeconds:
+        sliderValues[Math.round(simSpeedSlider.value)].seconds
 
-    onCurrentSecondsChanged: {
-        // Symétrique de ensureAtLeast() côté dt : si la vitesse choisie
-        // descend sous dt, on baisse dt plutôt que de laisser
-        // simSpeedFactor / dt tomber à 0 par division entière.
-        if (currentSeconds < frontManager.dt) {
-            frontManager.userSetDt(currentSeconds)
+    // Vitesse absolue utilisée pour déterminer le DT.
+    readonly property int currentSpeedMagnitude:
+        Math.abs(currentSeconds)
+
+    onCurrentSpeedMagnitudeChanged: {
+        // DT est toujours positif.
+        // Le signe de simSpeedFactor sert uniquement au sens
+        // d'évolution de simTime.
+        if (currentSpeedMagnitude < Math.abs(frontManager.dt)) {
+            frontManager.userSetDt(currentSpeedMagnitude)
         }
     }
 
@@ -58,30 +65,47 @@ Column {
 
         width: speedControl.width
 
-        live: false // Pour faire en sorte qu'on update que quand on relâche le curseur
+        live: false
 
         from: 0
         to: speedControl.sliderValues.length - 1
         stepSize: 1
-        value: 10 // "+1h/s" (3600) : aligné sur le simSpeedFactor par défaut de BackManager
+        value: 10
 
         onValueChanged: {
             var index = Math.round(value)
-            frontManager.simSpeedFactor = speedControl.sliderValues[index].seconds
+            frontManager.simSpeedFactor =
+                    speedControl.sliderValues[index].seconds
         }
     }
 
-    // Force simSpeedFactor à valoir au moins minSeconds, en déplaçant
-    // le curseur sur le premier palier qui l'atteint ou le dépasse.
-    // Sans ça, simSpeedFactor / dt peut tomber à 0 (division entière)
-    // si dt dépasse la vitesse de simulation choisie.
     function ensureAtLeast(minSeconds) {
+        minSeconds = Math.abs(minSeconds)
+
+        var current = currentSeconds
+        var direction = current < 0 ? -1 : 1
+
+        var bestIndex = -1
+        var bestMagnitude = Number.MAX_VALUE
+
         for (var i = 0; i < sliderValues.length; i++) {
-            if (sliderValues[i].seconds >= minSeconds) {
-                simSpeedSlider.value = i
-                return
+            var candidate = sliderValues[i].seconds
+
+            // On conserve le sens actuel du temps.
+            if ((candidate < 0 ? -1 : 1) !== direction)
+                continue
+
+            var magnitude = Math.abs(candidate)
+
+            if (magnitude >= minSeconds &&
+                magnitude < bestMagnitude) {
+                bestMagnitude = magnitude
+                bestIndex = i
             }
         }
-        simSpeedSlider.value = sliderValues.length - 1
+
+        if (bestIndex >= 0) {
+            simSpeedSlider.value = bestIndex
+        }
     }
 }

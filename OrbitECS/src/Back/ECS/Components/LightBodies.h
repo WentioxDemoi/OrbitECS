@@ -5,7 +5,7 @@
 
 // LightBodies.h
 struct LightBodies {
-  explicit LightBodies(std::size_t count)
+  explicit LightBodies(int count)
       : dynamic_(count), vx(count), vy(count), vz(count), ax(count), ay(count),
         az(count), count_(count) {}
 

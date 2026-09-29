@@ -73,11 +73,7 @@ Window {
         }
 
         DirectionalLight {
-            eulerRotation: Qt.vector3d(
-                -35,
-                -45,
-                0
-            )
+            eulerRotation: Qt.vector3d(-35, -45, 0)
 
             brightness: 1.0
         }
@@ -87,21 +83,13 @@ Window {
             source: "#Sphere"
             instancing: frontManager.heavyInstancing
 
-            scale: Qt.vector3d(
-                0.03,
-                0.03,
-                0.03
-            )
+            scale: Qt.vector3d(0.03, 0.03, 0.03)
 
             materials: PrincipledMaterial {
                 baseColor: "white"
                 lighting: PrincipledMaterial.NoLighting
 
-                emissiveFactor: Qt.vector3d(
-                    0.5,
-                    0.5,
-                    0.5
-                )
+                emissiveFactor: Qt.vector3d(0.5, 0.5, 0.5)
             }
         }
 
@@ -110,11 +98,7 @@ Window {
             source: "#Sphere"
             instancing: frontManager.lightInstancing
 
-            scale: Qt.vector3d(
-                0.03,
-                0.03,
-                0.03
-            )
+            scale: Qt.vector3d(0.03, 0.03, 0.03)
 
             materials: PrincipledMaterial {
                 baseColor: "#b8c0d0"
@@ -149,7 +133,7 @@ Window {
 
         mouseEnabled: false
     }
-    
+
     SidePanel {
         id: menuPanel
 
@@ -157,11 +141,7 @@ Window {
 
         width: 210
 
-        height:
-            Math.min(
-                contentHeight + 16,
-                window.height - 100
-            ) * window.menuProgress
+        height: Math.min(contentHeight + 16, window.height - 100) * window.menuProgress
 
         x: window.width - width - 16
         y: 16 + 52 + 10
@@ -171,7 +151,7 @@ Window {
 
         followedIndex: rig.followedIndex
 
-        onBodySelected: (index) => rig.follow(index)
+        onBodySelected: index => rig.follow(index)
         onFreeViewRequested: rig.release()
     }
 
@@ -211,12 +191,12 @@ Window {
             value: frontManager.dt
 
             onValueChanged: {
-                frontManager.userSetDt(value)
-                if (frontManager.simSpeedFactor < value) {
-                    speedControl.ensureAtLeast(value)
+                frontManager.userSetDt(value);
+
+                if (Math.abs(frontManager.simSpeedFactor) < Math.abs(value)) {
+                    speedControl.ensureAtLeast(Math.abs(value));
                 }
             }
-            
         }
 
         NumericSlider {

@@ -9,12 +9,12 @@
 namespace IntegrationSystem {
         // Utilise v(t) et a(t) (déjà dans heavy/light), écrit les nouvelles positions dans out
     void updatePositions(HeavyBodies& heavy, LightBodies& light,
-                          const StateSnapshot& in, StateSnapshot& out, double dt);
+                          const StateSnapshot& in, StateSnapshot& out, int dt);
 
     // Combine prevAccel (a(t)) et heavy/light.ax actuel (a(t+dt)) pour mettre à jour v
     void updateVelocities(HeavyBodies& heavy, LightBodies& light,
                            const AccelBuffer& prevHeavyAccel, const AccelBuffer& prevLightAccel,
-                           double dt);
+                           int dt);
 }
 
 #endif

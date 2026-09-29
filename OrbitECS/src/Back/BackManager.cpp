@@ -11,8 +11,8 @@
 #include <thread>
 
 BackManager::BackManager(HeavyBodies heavy, LightBodies light,
-                         BufferExchange &buf, double dt, double simSpeedFactor, QObject *parent)
-    : heavy_(std::move(heavy)), light_(std::move(light)), buf_(buf), dt_(dt),
+             BufferExchange &buf, int dt, int simSpeedFactor, QObject *parent)
+  : heavy_(std::move(heavy)), light_(std::move(light)), buf_(buf), dt_(dt),
       simSpeedFactor_(simSpeedFactor), prevHeavyAccel_(heavy_.count_),
       prevLightAccel_(light_.count_),
       local_{StateSnapshot(heavy_.dynamic_, light_.dynamic_),
@@ -35,15 +35,23 @@ void BackManager::run() {
   // int i = 0; // Debug
 
   while (running_) {
-    std::cout << "SimSpeed : " + std::to_string(simSpeedFactor_) + "   dt : " + std::to_string(dt_) << std::endl;
-    const int stepsPerBatch = simSpeedFactor_ / dt_;
-
+    const int simSpeedFactor =
+      simSpeedFactor_;
+    const int maxStepSeconds = dt_;
+    const int simulationSeconds = simSpeedFactor;
+    const int absoluteDuration =
+      simulationSeconds < 0 ? -simulationSeconds : simulationSeconds;
+    const int stepsPerBatch =
+      absoluteDuration / maxStepSeconds +
+      (absoluteDuration % maxStepSeconds != 0 ? 1 : 0);
+    std::cout << "SimSpeed : " << simSpeedFactor << "   dt : "
+          << maxStepSeconds << std::endl;
     const auto batchStart = clock_type::now();
     // Amorce le batch depuis le dernier état publié
     local_[0] = buf_.lastPublished();
     localCurr_ = 0;
 
-    processBatch(stepsPerBatch);
+    processBatch(simulationSeconds, maxStepSeconds);
 
     // Un seul transfert vers BufferExchange, une seule publication par batch
     StateSnapshot &finalState = local_[localCurr_];
@@ -92,13 +100,26 @@ void BackManager::run() {
 
 void BackManager::stop() { running_ = false; }
 
-void BackManager::processBatch(int stepsPerBatch) {
-  for (int s = 0; s < stepsPerBatch && running_; ++s) {
+void BackManager::processBatch(int simulationSeconds,
+                               int maxStepSeconds) {
+  if (maxStepSeconds <= 0)
+    return;
+
+  const int direction = simulationSeconds < 0 ? -1 : 1;
+  int remainingSeconds = simulationSeconds;
+
+  while (remainingSeconds != 0 && running_) {
+    const int remainingMagnitude =
+        remainingSeconds < 0 ? -remainingSeconds : remainingSeconds;
+    const int stepMagnitude = 
+        std::min<int>(remainingMagnitude, maxStepSeconds);
+    const int stepSeconds = direction * stepMagnitude;
+
     // Snapshot tmp pour povoir calculer toutes les steps entre 2 batchs
     StateSnapshot &in = local_[localCurr_];
     StateSnapshot &out = local_[1 - localCurr_];
 
-    IntegrationSystem::updatePositions(heavy_, light_, in, out, dt_);
+    IntegrationSystem::updatePositions(heavy_, light_, in, out, stepSeconds);
 
     prevHeavyAccel_.ax = heavy_.ax;
     prevHeavyAccel_.ay = heavy_.ay;
@@ -110,8 +131,9 @@ void BackManager::processBatch(int stepsPerBatch) {
     GravitySystem::computeAccelerations(heavy_, light_, out);
 
     IntegrationSystem::updateVelocities(heavy_, light_, prevHeavyAccel_,
-                                        prevLightAccel_, dt_);
+                                        prevLightAccel_, stepSeconds);
 
     localCurr_ = 1 - localCurr_;
+    remainingSeconds -= direction * stepMagnitude;
   }
 }

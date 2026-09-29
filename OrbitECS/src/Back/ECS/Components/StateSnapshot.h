@@ -4,7 +4,7 @@
 #include "Dynamic.h"
 
 struct StateSnapshot {
-  double simTime = 0.0;
+  int simTime = 0.0;
   Dynamic heavyDynamic;
   Dynamic lightDynamic;
 
