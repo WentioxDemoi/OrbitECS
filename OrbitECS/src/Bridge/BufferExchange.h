@@ -7,9 +7,9 @@
 
 class BufferExchange {
 public:
-  BufferExchange(const Dynamic &heavy, const Dynamic &light)
-      : storage_{StateSnapshot(heavy, light), StateSnapshot(heavy, light),
-                 StateSnapshot(heavy, light), StateSnapshot(heavy, light)} {}
+  BufferExchange(const Dynamic &heavy, const Dynamic &light, std::chrono::system_clock::time_point epoch)
+      : storage_{StateSnapshot(heavy, light, epoch), StateSnapshot(heavy, light, epoch),
+                 StateSnapshot(heavy, light, epoch), StateSnapshot(heavy, light, epoch)} {}
 
   // Côté back
   StateSnapshot &writeSlot() noexcept { return storage_[idx_[Write]]; }

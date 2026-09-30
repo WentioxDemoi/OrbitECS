@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <chrono>
+#include <sstream>
+#include <utility>
 
 namespace {
 
@@ -92,6 +95,7 @@ std::string buildText(const std::string &name, std::mt19937 &rng) {
 struct HeavyLoad {
   HeavyBodies bodies;
   std::vector<BodyMetaData> meta;
+  std::chrono::system_clock::time_point epoch;
 };
 
 HeavyLoad loadHeavy(std::string_view path) {
@@ -107,13 +111,26 @@ HeavyLoad loadHeavy(std::string_view path) {
   std::vector<std::string> names;
   std::vector<double> mass, gm, x, y, z, vx, vy, vz, radius;
 
+  std::chrono::system_clock::time_point epoch;
+  bool isEpoch = false;
+
   std::string line;
+
   while (getCsvLine(file, line)) {
     if (line.empty())
       continue;
     const auto fields = splitCsvLine(line);
     if (fields.size() < nCols)
       continue;
+
+    if (!isEpoch) {
+        std::istringstream iss(fields[col.at("epoch")]);
+        std::tm tm{};
+        iss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+        if (iss.fail()) { /* erreur */ }
+        epoch = std::chrono::system_clock::from_time_t(timegm(&tm));
+        isEpoch = true;
+    }
 
     names.push_back(fields[col.at("name")]);
     gm.push_back(std::stod(fields[col.at("gm_km3_s2")]));
@@ -154,7 +171,7 @@ HeavyLoad loadHeavy(std::string_view path) {
         BodyMetaData{names[i], mass[i], buildText(names[i], rng), radius[i]});
   }
 
-  return {std::move(heavy), std::move(meta)};
+  return {std::move(heavy), std::move(meta), std::move(epoch)};
 }
 
 // --- Light ---------------------------------------------------------------
@@ -206,7 +223,7 @@ LoadedBodies load(std::string_view heavyPath, std::string_view lightPath) {
   auto heavy = loadHeavy(heavyPath);
   auto light = loadLight(lightPath);
   return LoadedBodies{std::move(heavy.bodies), std::move(light),
-                      std::move(heavy.meta)};
+                      std::move(heavy.meta), std::move(heavy.epoch)};
 }
 
 } // namespace BodyLoader

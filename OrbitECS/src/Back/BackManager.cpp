@@ -8,12 +8,12 @@
 #include <thread>
 
 BackManager::BackManager(HeavyBodies heavy, LightBodies light,
-                         BufferExchange &buf, QObject *parent)
+                         BufferExchange &buf, std::chrono::system_clock::time_point epoch, QObject *parent)
     : heavy_(std::move(heavy)), light_(std::move(light)), buf_(buf), dt_(1),
       simSpeedFactor_(1), prevHeavyAccel_(heavy_.count_),
       prevLightAccel_(light_.count_),
-      local_{StateSnapshot(heavy_.dynamic_, light_.dynamic_),
-             StateSnapshot(heavy_.dynamic_, light_.dynamic_)},
+      local_{StateSnapshot(heavy_.dynamic_, light_.dynamic_, epoch),
+             StateSnapshot(heavy_.dynamic_, light_.dynamic_, epoch)},
       QObject(parent) {
   primeAccelerations();
 }

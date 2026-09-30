@@ -29,16 +29,16 @@ int main(int argc, char *argv[]) {
   DebugPrint::printLoadedBodies(loaded);
 
   // Attention à l'odre, dans l'instanciation de back, on utilise un move.
-  BufferExchange exchange(loaded.heavy.dynamic_, loaded.light.dynamic_);
+  BufferExchange exchange(loaded.heavy.dynamic_, loaded.light.dynamic_, loaded.epoch);
 
   // Pour front et back, pas besoin de passer un parent QObject car ces instances sont sur la stack.
   // Si on donne un parent, Qt appellerait delete pour des objets qui n'ont jamais été instanciés sur la heap --> UB
   FrontManager front(exchange, std::move(loaded.meta), nullptr);
-  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange, nullptr);
+  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange, loaded.epoch, nullptr);
 
-    QObject::connect(&front, &FrontManager::simSpeedFactorChanged, &back, &BackManager::onSimSpeedFactorChanged);
-    QObject::connect(&front, &FrontManager::dtChanged, &back, &BackManager::onDtChanged);
-    QObject::connect(&back, &BackManager::simulationOverrun, &front, &FrontManager::setDt);
+  QObject::connect(&front, &FrontManager::simSpeedFactorChanged, &back, &BackManager::onSimSpeedFactorChanged);
+  QObject::connect(&front, &FrontManager::dtChanged, &back, &BackManager::onDtChanged);
+  QObject::connect(&back, &BackManager::simulationOverrun, &front, &FrontManager::setDt);
   // // Start le back (thread)
   std::thread backThread([&back] { back.run(); });
 

@@ -31,6 +31,8 @@ class FrontManager : public QObject {
 
   Q_PROPERTY(int dt READ dt WRITE setDt NOTIFY dtChanged)
 
+  Q_PROPERTY(QString dateString READ dateString NOTIFY dateStringChanged)
+
 public:
   explicit FrontManager(BufferExchange &exchange,
                         std::vector<BodyMetaData> metaData, QObject *parent);
@@ -40,12 +42,11 @@ public:
   QQuick3DInstancing *lightInstancing() { return &lightInstancing_; }
 
   int heavyCount() const { return static_cast<int>(heavyCount_); }
-
   int lightCount() const { return static_cast<int>(lightCount_); }
 
   int simSpeedFactor() const { return static_cast<int>(simSpeedFactor_); }
-
   int dt() const { return static_cast<int>(dt_); }
+  QString dateString() const { return dateString_; }
 
   void setDt(int dt) {
     dt_ = static_cast<uint16_t>(dt);
@@ -71,6 +72,7 @@ private slots:
 signals:
   void simSpeedFactorChanged(int simSpeedFactor);
   void dtChanged(int dt);
+  void dateStringChanged();
 
 private:
   void interpolate(const Dynamic &prev, const Dynamic &target, double alpha,
@@ -91,6 +93,7 @@ private:
 
   QTimer timer_;
   QElapsedTimer clock_;
+  QString dateString_;
 
   qint64 lastAdvanceMs_ = -1;
   qint64 advanceIntervalMs_ = 0;

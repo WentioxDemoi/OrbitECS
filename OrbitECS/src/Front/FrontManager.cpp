@@ -5,6 +5,11 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <iostream>
+#include <string>
+#include <QDateTime>
+#include <QDebug>
+#include <QTimeZone>
 
 namespace {
 constexpr double kPositionScale = 1e-6;
@@ -19,7 +24,6 @@ FrontManager::FrontManager(BufferExchange &exchange,
   const StateSnapshot &initial = exchange_.target();
 
   heavyCount_ = static_cast<uint32_t>(initial.heavyDynamic.x.size());
-
   lightCount_ = static_cast<uint32_t>(initial.lightDynamic.x.size());
 
   std::vector<float> heavyScale(heavyCount_);
@@ -35,13 +39,11 @@ FrontManager::FrontManager(BufferExchange &exchange,
     }
 
     visualRadius = std::max(visualRadius, 0.015f);
-
     heavyScale[i] = visualRadius / kSphereRadius;
 
     const qreal hue = heavyCount_ > 1 ? static_cast<double>(i) /
                                             static_cast<double>(heavyCount_)
                                       : 0.0;
-
     const QColor c = QColor::fromHsvF(hue, 0.55, 1.0);
 
     heavyColor[i] =
@@ -51,7 +53,6 @@ FrontManager::FrontManager(BufferExchange &exchange,
   const float lightVisualScale = heavyCount_ > 0 ? heavyScale[0] / 4.0f : 1.0f;
 
   const std::vector<float> lightScale(lightCount_, lightVisualScale);
-
   const std::vector<QVector4D> lightColor(lightCount_,
                                           QVector4D(1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -65,12 +66,10 @@ FrontManager::FrontManager(BufferExchange &exchange,
 
   interpolate(initial.heavyDynamic, initial.heavyDynamic, 0.0, heavyX_, heavyY_,
               heavyZ_);
-
   interpolate(initial.lightDynamic, initial.lightDynamic, 0.0, lightX_, lightY_,
               lightZ_);
 
   heavyInstancing_.setBodies(heavyX_, heavyY_, heavyZ_, heavyScale, heavyColor);
-
   lightInstancing_.setBodies(lightX_, lightY_, lightZ_, lightScale, lightColor);
 
   timer_.setInterval(16);
@@ -110,14 +109,32 @@ void FrontManager::tick() {
 
   const StateSnapshot &target = exchange_.target();
 
+  
+
   interpolate(prev.heavyDynamic, target.heavyDynamic, alpha, heavyX_, heavyY_,
               heavyZ_);
 
   interpolate(prev.lightDynamic, target.lightDynamic, alpha, lightX_, lightY_,
               lightZ_);
 
-  heavyInstancing_.updatePositions(heavyX_, heavyY_, heavyZ_);
+const double simTime =
+    prev.simTime + (target.simTime - prev.simTime) * alpha;
 
+const qint64 epochSecs = std::chrono::duration_cast<std::chrono::seconds>(
+                             target.epoch.time_since_epoch())
+                             .count();
+
+const qint64 totalSecs = epochSecs + static_cast<qint64>(std::floor(simTime));
+
+const QString date = QDateTime::fromSecsSinceEpoch(totalSecs, QTimeZone::UTC)
+                         .toString("yyyy-MM-dd HH:mm:ss");
+
+if (date != dateString_) {
+  dateString_ = date;
+  emit dateStringChanged();
+}
+
+  heavyInstancing_.updatePositions(heavyX_, heavyY_, heavyZ_);
   lightInstancing_.updatePositions(lightX_, lightY_, lightZ_);
 }
 

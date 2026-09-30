@@ -10,6 +10,7 @@ struct LoadedBodies {
   HeavyBodies heavy;
   LightBodies light;
   std::vector<BodyMetaData> meta;
+  std::chrono::system_clock::time_point epoch;
 };
 
 #endif

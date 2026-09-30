@@ -15,7 +15,7 @@ class BackManager : public QObject {
 public:
   // dt : pas Verlet fixe, en secondes simulées (précision de l'intégration)
   // simSpeedFactor : secondes simulées par seconde réelle (vitesse de la simu)
-  BackManager(HeavyBodies heavy, LightBodies light, BufferExchange &buf,
+  BackManager(HeavyBodies heavy, LightBodies light, BufferExchange &buf, std::chrono::system_clock::time_point epoch,
               QObject *parent);
 
   void run();

@@ -166,6 +166,27 @@ Window {
         onToggled: window.menuOpen = !window.menuOpen
     }
 
+        Rectangle {
+        x: 16
+        y: 16
+
+        width: 320
+        height: 40
+        radius: 8
+
+        color: "#99000000"
+        border.color: "#33ffffff"
+        border.width: 1
+
+        Text {
+            anchors.centerIn: parent
+            text: frontManager.dateString + " UTC"
+            color: "white"
+            font.pixelSize: 16
+            font.family: "monospace"
+        }
+    }
+
     Column {
         spacing: 8
 
