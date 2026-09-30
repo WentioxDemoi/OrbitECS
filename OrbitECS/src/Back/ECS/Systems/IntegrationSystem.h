@@ -5,16 +5,17 @@
 #include "LightBodies.h"
 #include "StateSnapshot.h"
 #include "AccelBuffer.h"
+#include <cstdint>
 
 namespace IntegrationSystem {
-        // Utilise v(t) et a(t) (déjà dans heavy/light), écrit les nouvelles positions dans out
+    // Utilise v(t) et a(t) (déjà dans heavy/light), écrit les nouvelles positions dans out
     void updatePositions(HeavyBodies& heavy, LightBodies& light,
-                          const StateSnapshot& in, StateSnapshot& out, int dt);
+                          const StateSnapshot& in, StateSnapshot& out, int16_t dt);
 
     // Combine prevAccel (a(t)) et heavy/light.ax actuel (a(t+dt)) pour mettre à jour v
     void updateVelocities(HeavyBodies& heavy, LightBodies& light,
                            const AccelBuffer& prevHeavyAccel, const AccelBuffer& prevLightAccel,
-                           int dt);
+                           int16_t dt);
 }
 
 #endif

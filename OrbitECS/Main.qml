@@ -87,9 +87,8 @@ Window {
 
             materials: PrincipledMaterial {
                 baseColor: "white"
-                lighting: PrincipledMaterial.NoLighting
-
-                emissiveFactor: Qt.vector3d(0.5, 0.5, 0.5)
+                lighting: PrincipledMaterial.FragmentLighting
+                roughness: 0.8
             }
         }
 
@@ -102,7 +101,8 @@ Window {
 
             materials: PrincipledMaterial {
                 baseColor: "#b8c0d0"
-                lighting: PrincipledMaterial.NoLighting
+                lighting: PrincipledMaterial.FragmentLighting
+                roughness: 0.9
             }
         }
     }
@@ -167,12 +167,12 @@ Window {
     }
 
     Column {
-        spacing: 12
+        spacing: 8
 
-        width: Math.min(window.width - 64, 640)
+        width: 320
 
-        x: (window.width - width) / 2
-        y: window.height - height - 24
+        x: 16
+        y: window.height - height - 16
 
         SpeedControl {
             id: speedControl

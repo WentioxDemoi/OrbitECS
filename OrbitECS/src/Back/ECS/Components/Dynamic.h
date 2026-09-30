@@ -7,7 +7,7 @@
 struct Dynamic {
   std::vector<double> x, y, z;
 
-  explicit Dynamic(int count) : x(count), y(count), z(count) {}
+  explicit Dynamic(size_t count) : x(count), y(count), z(count) {}
 };
 
 #endif

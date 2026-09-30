@@ -9,7 +9,7 @@
 
 struct HeavyBodies {
 
-  explicit HeavyBodies(int count)
+  explicit HeavyBodies(size_t count)
       : mass(count), gm(count), vx(count), vy(count), vz(count), ax(count),
         ay(count), az(count), name(count), dynamic_(count), count_(count) {}
 
@@ -27,7 +27,7 @@ struct HeavyBodies {
   std::vector<std::string> name;
 
   Dynamic dynamic_;
-  int count_;
+  size_t count_;
 };
 
 #endif

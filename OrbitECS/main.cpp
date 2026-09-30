@@ -34,8 +34,7 @@ int main(int argc, char *argv[]) {
   // Pour front et back, pas besoin de passer un parent QObject car ces instances sont sur la stack.
   // Si on donne un parent, Qt appellerait delete pour des objets qui n'ont jamais été instanciés sur la heap --> UB
   FrontManager front(exchange, std::move(loaded.meta), nullptr);
-  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange,
-                   1 /*dt en seconde*/, 1 /*simSpeedFactor*/, nullptr);
+  BackManager back(std::move(loaded.heavy), std::move(loaded.light), exchange, nullptr);
 
     QObject::connect(&front, &FrontManager::simSpeedFactorChanged, &back, &BackManager::onSimSpeedFactorChanged);
     QObject::connect(&front, &FrontManager::dtChanged, &back, &BackManager::onDtChanged);

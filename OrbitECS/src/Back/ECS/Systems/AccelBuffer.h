@@ -6,7 +6,8 @@
 
 struct AccelBuffer {
   std::vector<double> ax, ay, az;
-  explicit AccelBuffer(int n) : ax(n), ay(n), az(n) {}
+  size_t count_;
+  explicit AccelBuffer(size_t n) : ax(n), ay(n), az(n), count_(n) {}
 };
 
 #endif

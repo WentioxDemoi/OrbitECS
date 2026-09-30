@@ -9,12 +9,9 @@ GlassBackground {
 
     property bool menuOpen: false
 
-    signal toggled()
+    signal toggled
 
-    scale:
-        toggleArea.pressed
-        ? 0.92
-        : 1.0
+    scale: toggleArea.pressed ? 0.92 : 1.0
 
     Behavior on scale {
         NumberAnimation {
@@ -24,24 +21,15 @@ GlassBackground {
 
     Text {
         anchors.centerIn: parent
-
-        text:
-            toggleButton.menuOpen
-            ? "✕"
-            : "☰"
-
+        text: toggleButton.menuOpen ? "✕" : "☰"
         color: "white"
-
         font.pixelSize: 22
     }
 
     MouseArea {
         id: toggleArea
-
         anchors.fill: parent
-
         cursorShape: Qt.PointingHandCursor
-
         onClicked: toggleButton.toggled()
     }
 }

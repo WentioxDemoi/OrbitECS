@@ -16,9 +16,7 @@ Column {
 
     Label {
         anchors.horizontalCenter: parent.horizontalCenter
-        text: control.label + " : " + Math.round(
-            control.from + slider.visualPosition * (control.to - control.from)
-        ) + control.suffix
+        text: control.label + " : " + Math.round(control.from + slider.visualPosition * (control.to - control.from)) + control.suffix
     }
 
     Slider {

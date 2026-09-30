@@ -98,11 +98,11 @@ HeavyLoad loadHeavy(std::string_view path) {
   auto file = openCsv(path);
 
   std::size_t nCols = 0;
-  const auto col = readHeader(file, path,
-                              {"name", "x_km", "y_km", "z_km", "vx_km_s",
-                               "vy_km_s", "vz_km_s", "mass_kg", "gm_km3_s2",
-                               "radius_km"},
-                              nCols);
+  const auto col =
+      readHeader(file, path,
+                 {"name", "x_km", "y_km", "z_km", "vx_km_s", "vy_km_s",
+                  "vz_km_s", "mass_kg", "gm_km3_s2", "radius_km"},
+                 nCols);
 
   std::vector<std::string> names;
   std::vector<double> mass, gm, x, y, z, vx, vy, vz, radius;

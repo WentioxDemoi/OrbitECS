@@ -5,13 +5,13 @@
 
 // LightBodies.h
 struct LightBodies {
-  explicit LightBodies(int count)
+  explicit LightBodies(size_t count)
       : dynamic_(count), vx(count), vy(count), vz(count), ax(count), ay(count),
         az(count), count_(count) {}
 
   Dynamic dynamic_;
   std::vector<double> vx, vy, vz, ax, ay, az;
-  int count_;
+  size_t count_;
 };
 
 #endif

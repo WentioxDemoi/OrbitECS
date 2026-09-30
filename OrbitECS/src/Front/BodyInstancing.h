@@ -16,9 +16,8 @@ public:
                  const std::vector<float> &z, const std::vector<float> &scale,
                  const std::vector<QVector4D> &colorRgba);
 
-  void updatePositions(const std::vector<float> &x,
-                        const std::vector<float> &y,
-                        const std::vector<float> &z);
+  void updatePositions(const std::vector<float> &x, const std::vector<float> &y,
+                       const std::vector<float> &z);
 
   int instanceCount() const { return int(m_scale.size()); }
 

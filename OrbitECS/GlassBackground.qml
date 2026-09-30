@@ -15,12 +15,7 @@ Item {
         anchors.fill: parent
         sourceItem: gb.backdrop
 
-        sourceRect: Qt.rect(
-            gb.x,
-            gb.y,
-            gb.width,
-            gb.height
-        )
+        sourceRect: Qt.rect(gb.x, gb.y, gb.width, gb.height)
 
         visible: false
     }

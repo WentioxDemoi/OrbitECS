@@ -5,7 +5,7 @@
 #include <string_view>
 
 namespace BodyLoader {
-  LoadedBodies load(std::string_view heavyPath, std::string_view lightPath);
+LoadedBodies load(std::string_view heavyPath, std::string_view lightPath);
 };
 
 #endif
