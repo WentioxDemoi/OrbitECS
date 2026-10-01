@@ -187,6 +187,51 @@ Window {
         }
     }
 
+    // Panneau d'information du corps suivi
+Rectangle {
+    id: infoPanel
+
+    readonly property bool shown: rig.followedIndex >= 0
+    property real progress: shown ? 1.0 : 0.0
+
+    Behavior on progress {
+        NumberAnimation {
+            duration: 200
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    visible: progress > 0.01
+    opacity: progress
+
+    x: 16
+    y: 16 + 40 + 8          // sous le timestamp (y=16, height=40) + marge
+
+    width: 320              // même largeur que le timestamp
+    height: infoText.implicitHeight + 24
+    radius: 8
+
+    color: "#99000000"
+    border.color: "#33ffffff"
+    border.width: 1
+
+    Text {
+        id: infoText
+
+        anchors.fill: parent
+        anchors.margins: 12
+
+        // Le texte n'est mis à jour que lorsqu'un corps est suivi
+        text: rig.followedIndex >= 0
+              ? frontManager.heavyText(rig.followedIndex)
+              : ""
+
+        color: "white"
+        font.pixelSize: 14
+        wrapMode: Text.WordWrap
+    }
+}
+
     Column {
         spacing: 8
 

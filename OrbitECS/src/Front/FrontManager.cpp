@@ -180,3 +180,12 @@ QVector3D FrontManager::heavyPosition(int index) const {
 
   return QVector3D(heavyX_[i], heavyY_[i], heavyZ_[i]);
 }
+
+QString FrontManager::heavyText(int index) const {
+    if (index < 0 || static_cast<uint32_t>(index) >= heavyCount_) {
+    return QString();
+  }
+
+  return QString::fromStdString(
+      metaData_[static_cast<std::size_t>(index)].text);
+}

@@ -14,19 +14,34 @@ namespace {
 
 using ColIndex = std::unordered_map<std::string, std::size_t>;
 
-// Split qui conserve les champs vides (y compris le dernier).
 std::vector<std::string> splitCsvLine(const std::string &line) {
   std::vector<std::string> fields;
-  std::size_t start = 0;
-  while (true) {
-    const auto pos = line.find(',', start);
-    if (pos == std::string::npos) {
-      fields.push_back(line.substr(start));
-      break;
+  std::string current;
+  bool inQuotes = false;
+
+  for (std::size_t i = 0; i < line.size(); ++i) {
+    const char c = line[i];
+    if (inQuotes) {
+      if (c == '"') {
+        if (i + 1 < line.size() && line[i + 1] == '"') {
+          current += '"';
+          ++i;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += c;
+      }
+    } else if (c == '"') {
+      inQuotes = true;
+    } else if (c == ',') {
+      fields.push_back(std::move(current));
+      current.clear();
+    } else {
+      current += c;
     }
-    fields.push_back(line.substr(start, pos - start));
-    start = pos + 1;
   }
+  fields.push_back(std::move(current));
   return fields;
 }
 
@@ -74,22 +89,6 @@ ColIndex readHeader(std::ifstream &file, std::string_view path,
   return colIndex;
 }
 
-const std::vector<std::string> &randomPhrases() {
-  static const std::vector<std::string> phrases = {
-      "orbite silencieusement depuis des milliards d'années.",
-      "danse au rythme de la gravité du système solaire.",
-      "traverse le vide en suivant une trajectoire immuable.",
-      "porte les cicatrices de son histoire cosmique.",
-      "veille, discret, dans l'obscurité de l'espace."};
-  return phrases;
-}
-
-std::string buildText(const std::string &name, std::mt19937 &rng) {
-  const auto &phrases = randomPhrases();
-  std::uniform_int_distribution<std::size_t> dist(0, phrases.size() - 1);
-  return name + " " + phrases[dist(rng)];
-}
-
 // --- Heavy ---------------------------------------------------------------
 
 struct HeavyLoad {
@@ -105,10 +104,10 @@ HeavyLoad loadHeavy(std::string_view path) {
   const auto col =
       readHeader(file, path,
                  {"name", "x_km", "y_km", "z_km", "vx_km_s", "vy_km_s",
-                  "vz_km_s", "mass_kg", "gm_km3_s2", "radius_km"},
+                  "vz_km_s", "mass_kg", "gm_km3_s2", "radius_km", "text"},
                  nCols);
 
-  std::vector<std::string> names;
+  std::vector<std::string> names, text;
   std::vector<double> mass, gm, x, y, z, vx, vy, vz, radius;
 
   std::chrono::system_clock::time_point epoch;
@@ -142,6 +141,7 @@ HeavyLoad loadHeavy(std::string_view path) {
     vz.push_back(std::stod(fields[col.at("vz_km_s")]));
     mass.push_back(std::stod(fields[col.at("mass_kg")]));
     radius.push_back(std::stod(fields[col.at("radius_km")]));
+    text.push_back(fields[col.at("text")]);
   }
 
   const std::size_t count = names.size();
@@ -168,7 +168,7 @@ HeavyLoad loadHeavy(std::string_view path) {
     heavy.dynamic_.z[i] = z[i];
 
     meta.push_back(
-        BodyMetaData{names[i], mass[i], buildText(names[i], rng), radius[i]});
+        BodyMetaData{names[i], mass[i], text[i], radius[i]});
   }
 
   return {std::move(heavy), std::move(meta), std::move(epoch)};
