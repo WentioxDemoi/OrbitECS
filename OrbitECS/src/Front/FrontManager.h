@@ -4,9 +4,9 @@
 #include <QElapsedTimer>
 #include <QObject>
 #include <QQuick3DInstancing>
+#include <QString>
 #include <QTimer>
 #include <QVector3D>
-#include <QtCore/qtmetamacros.h>
 
 #include <cstdint>
 #include <vector>
@@ -15,54 +15,53 @@
 #include "BodyMetaData.h"
 #include "BufferExchange.h"
 
+using f32 = float;
+using f64 = double;
+
+static_assert(sizeof(f32) == 4, "f32 must be 32-bit");
+static_assert(sizeof(f64) == 8, "f64 must be 64-bit");
+static_assert(sizeof(qint32) == sizeof(std::int32_t), "qint32 mismatch");
+
 class FrontManager : public QObject {
   Q_OBJECT
 
   Q_PROPERTY(QQuick3DInstancing *heavyInstancing READ heavyInstancing CONSTANT)
-
   Q_PROPERTY(QQuick3DInstancing *lightInstancing READ lightInstancing CONSTANT)
 
-  Q_PROPERTY(int heavyCount READ heavyCount CONSTANT)
+  Q_PROPERTY(qint32 heavyCount READ heavyCount CONSTANT)
+  Q_PROPERTY(qint32 lightCount READ lightCount CONSTANT)
 
-  Q_PROPERTY(int lightCount READ lightCount CONSTANT)
-
-  Q_PROPERTY(int simSpeedFactor READ simSpeedFactor WRITE setSimSpeedFactor
+  Q_PROPERTY(qint32 simSpeedFactor READ simSpeedFactor WRITE setSimSpeedFactor
                  NOTIFY simSpeedFactorChanged)
 
-  Q_PROPERTY(int dt READ dt WRITE setDt NOTIFY dtChanged)
+  Q_PROPERTY(qint32 dt READ dt WRITE setDt NOTIFY dtChanged)
 
   Q_PROPERTY(QString dateString READ dateString NOTIFY dateStringChanged)
 
 public:
   explicit FrontManager(BufferExchange &exchange,
-                        std::vector<BodyMetaData> metaData, QObject *parent);
+                        std::vector<BodyMetaData> metaData,
+                        QObject *parent = nullptr);
 
   QQuick3DInstancing *heavyInstancing() { return &heavyInstancing_; }
-
   QQuick3DInstancing *lightInstancing() { return &lightInstancing_; }
 
-  int heavyCount() const { return static_cast<int>(heavyCount_); }
-  int lightCount() const { return static_cast<int>(lightCount_); }
+  qint32 heavyCount() const { return static_cast<qint32>(heavyCount_); }
+  qint32 lightCount() const { return static_cast<qint32>(lightCount_); }
 
-  int simSpeedFactor() const { return static_cast<int>(simSpeedFactor_); }
-  int dt() const { return static_cast<int>(dt_); }
+  qint32 simSpeedFactor() const { return simSpeedFactor_; }
+  qint32 dt() const { return static_cast<qint32>(dt_); }
+
   QString dateString() const { return dateString_; }
 
-  void setDt(int dt) {
-    dt_ = static_cast<uint16_t>(dt);
-    emit dtChanged(dt);
-  }
+  void setDt(qint32 dt);
+  void setSimSpeedFactor(qint32 simSpeedFactor);
 
-  void setSimSpeedFactor(int simSpeedFactor) {
-    simSpeedFactor_ = static_cast<int64_t>(simSpeedFactor);
-    emit simSpeedFactorChanged(simSpeedFactor);
-  }
+  Q_INVOKABLE QVector3D heavyPosition(qint32 index) const;
+  Q_INVOKABLE QString heavyName(qint32 index) const;
+  Q_INVOKABLE QString heavyText(qint32 index) const;
 
-  Q_INVOKABLE QVector3D heavyPosition(int index) const;
-  Q_INVOKABLE QString heavyName(int index) const;
-  Q_INVOKABLE QString heavyText(int index) const;
-
-  Q_INVOKABLE void userSetDt(int dt) { setDt(dt); }
+  Q_INVOKABLE void userSetDt(qint32 dt) { setDt(dt); }
 
 public slots:
   void start();
@@ -71,17 +70,17 @@ private slots:
   void tick();
 
 signals:
-  void simSpeedFactorChanged(int simSpeedFactor);
-  void dtChanged(int dt);
+  void simSpeedFactorChanged(qint32 simSpeedFactor);
+  void dtChanged(qint32 dt);
   void dateStringChanged();
 
 private:
-  void interpolate(const Dynamic &prev, const Dynamic &target, double alpha,
-                   std::vector<float> &outX, std::vector<float> &outY,
-                   std::vector<float> &outZ) const;
+  void interpolate(const Dynamic &prev, const Dynamic &target, f64 alpha,
+                   std::vector<f32> &outX, std::vector<f32> &outY,
+                   std::vector<f32> &outZ) const;
 
   void updateTimeStamp(const StateSnapshot &prev, const StateSnapshot &target,
-                       const uint8_t &alpha);
+                       f64 alpha);
 
   BufferExchange &exchange_;
   std::vector<BodyMetaData> metaData_;
@@ -89,26 +88,26 @@ private:
   BodyInstancing heavyInstancing_;
   BodyInstancing lightInstancing_;
 
-  uint32_t heavyCount_ = 0;
-  uint32_t lightCount_ = 0;
+  std::uint32_t heavyCount_ = 0;
+  std::uint32_t lightCount_ = 0;
 
-  int64_t simSpeedFactor_ = 1;
-  uint16_t dt_ = 1;
+  std::int32_t simSpeedFactor_ = 1;
+  std::uint16_t dt_ = 1;
 
   QTimer timer_;
   QElapsedTimer clock_;
   QString dateString_;
 
-  qint64 lastAdvanceMs_ = -1;
-  qint64 advanceIntervalMs_ = 0;
+  std::int64_t lastAdvanceMs_ = -1;
+  std::int64_t advanceIntervalMs_ = 0;
 
-  std::vector<float> heavyX_;
-  std::vector<float> heavyY_;
-  std::vector<float> heavyZ_;
+  std::vector<f32> heavyX_;
+  std::vector<f32> heavyY_;
+  std::vector<f32> heavyZ_;
 
-  std::vector<float> lightX_;
-  std::vector<float> lightY_;
-  std::vector<float> lightZ_;
+  std::vector<f32> lightX_;
+  std::vector<f32> lightY_;
+  std::vector<f32> lightZ_;
 };
 
 #endif
