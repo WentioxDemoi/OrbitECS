@@ -2,14 +2,14 @@
 
 #include <QColor>
 
+#include <QDateTime>
+#include <QDebug>
+#include <QTimeZone>
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <iostream>
 #include <string>
-#include <QDateTime>
-#include <QDebug>
-#include <QTimeZone>
 
 namespace {
 constexpr double kPositionScale = 1e-6;
@@ -109,30 +109,13 @@ void FrontManager::tick() {
 
   const StateSnapshot &target = exchange_.target();
 
-  
-
   interpolate(prev.heavyDynamic, target.heavyDynamic, alpha, heavyX_, heavyY_,
               heavyZ_);
 
   interpolate(prev.lightDynamic, target.lightDynamic, alpha, lightX_, lightY_,
               lightZ_);
 
-const double simTime =
-    prev.simTime + (target.simTime - prev.simTime) * alpha;
-
-const qint64 epochSecs = std::chrono::duration_cast<std::chrono::seconds>(
-                             target.epoch.time_since_epoch())
-                             .count();
-
-const qint64 totalSecs = epochSecs + static_cast<qint64>(std::floor(simTime));
-
-const QString date = QDateTime::fromSecsSinceEpoch(totalSecs, QTimeZone::UTC)
-                         .toString("yyyy-MM-dd HH:mm:ss");
-
-if (date != dateString_) {
-  dateString_ = date;
-  emit dateStringChanged();
-}
+  updateTimeStamp(prev, target, alpha);
 
   heavyInstancing_.updatePositions(heavyX_, heavyY_, heavyZ_);
   lightInstancing_.updatePositions(lightX_, lightY_, lightZ_);
@@ -157,6 +140,25 @@ void FrontManager::interpolate(const Dynamic &prev, const Dynamic &target,
     outY[i] = static_cast<float>(y * kPositionScale);
 
     outZ[i] = static_cast<float>(z * kPositionScale);
+  }
+}
+
+void FrontManager::updateTimeStamp(const StateSnapshot &prev, const StateSnapshot &target, const uint8_t &alpha)
+{
+  const double simTime = prev.simTime + (target.simTime - prev.simTime) * alpha;
+
+  const qint64 epochSecs = std::chrono::duration_cast<std::chrono::seconds>(
+                               target.epoch.time_since_epoch())
+                               .count();
+
+  const qint64 totalSecs = epochSecs + static_cast<qint64>(std::floor(simTime));
+
+  const QString date = QDateTime::fromSecsSinceEpoch(totalSecs, QTimeZone::UTC)
+                           .toString("yyyy-MM-dd HH:mm:ss");
+
+  if (date != dateString_) {
+    dateString_ = date;
+    emit dateStringChanged();
   }
 }
 

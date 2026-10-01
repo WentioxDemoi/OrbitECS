@@ -79,6 +79,8 @@ private:
                    std::vector<float> &outX, std::vector<float> &outY,
                    std::vector<float> &outZ) const;
 
+  void updateTimeStamp(const StateSnapshot &prev, const StateSnapshot &target, const uint8_t &alpha);
+
   BufferExchange &exchange_;
   std::vector<BodyMetaData> metaData_;
 
