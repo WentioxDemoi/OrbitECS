@@ -39,10 +39,8 @@ int main(int argc, char *argv[]) {
   QObject::connect(&front, &FrontManager::simSpeedFactorChanged, &back, &BackManager::onSimSpeedFactorChanged);
   QObject::connect(&front, &FrontManager::dtChanged, &back, &BackManager::onDtChanged);
   QObject::connect(&back, &BackManager::simulationOverrun, &front, &FrontManager::setDt);
-  // // Start le back (thread)
+  
   std::thread backThread([&back] { back.run(); });
-
-  // Frontend QML
 
   QQmlApplicationEngine engine;
 
@@ -64,7 +62,6 @@ int main(int argc, char *argv[]) {
 
   const int rc = app.exec();
 
-  // Stop le back
   back.stop();
   backThread.join();
 
