@@ -13,8 +13,8 @@ if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
 endif()
 
 option(ORBIT_NATIVE_ARCH "Optimiser pour le CPU de la machine (non portable)" ON)
-option(ORBIT_FAST_MATH   "Activer -ffast-math (plus rapide, moins précis)"    ON)
-option(ORBIT_LTO         "Activer la LTO en Release"                          ON)
+option(ORBIT_FAST_MATH "Activer -ffast-math (plus rapide, moins précis)" ON)
+option(ORBIT_LTO "Activer la LTO en Release" ON)
 
 include(CheckCXXCompilerFlag)
 include(CheckIPOSupported)
@@ -22,11 +22,6 @@ include(CheckIPOSupported)
 find_package(Qt6 REQUIRED COMPONENTS
     Core
     Qml
-    Network
-    Test
-    Sql
-    Multimedia
-    MultimediaWidgets
     Quick
     Quick3D
     QuickControls2
@@ -143,10 +138,6 @@ target_link_libraries(appOrbitECS
     PRIVATE
         Qt6::Core
         Qt6::Qml
-        Qt6::Network
-        Qt6::Sql
-        Qt6::Multimedia
-        Qt6::MultimediaWidgets
         Qt6::Quick
         Qt6::QuickControls2
         Qt6::Quick3D

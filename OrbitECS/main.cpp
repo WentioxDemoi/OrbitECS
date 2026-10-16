@@ -3,7 +3,6 @@
 #include <QQmlContext>
 #include <QtCore/qobject.h>
 #include <QtGui/qguiapplication.h>
-#include <memory>
 #include <thread>
 
 #include "BackManager.h"
@@ -11,10 +10,8 @@
 #include "BufferExchange.h"
 #include "FrontManager.h"
 
-#include <iostream>
 
 #include "DebugPrint.h"
-#include <filesystem>
 
 int main(int argc, char *argv[]) {
   QGuiApplication app(argc, argv);
